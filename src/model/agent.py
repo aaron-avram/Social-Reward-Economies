@@ -9,7 +9,7 @@ from typing import List, Set, Dict, Optional
 import numpy as np
 from numpy.random import Generator
 
-from config import AlgorithmParams, Dimensions, ActorRateDriverMode
+from model.config import AlgorithmParams, Dimensions, ActorRateDriverMode
 
 
 class AgentRole(Enum):
