@@ -1,0 +1,26 @@
+[project]
+name = "social_reward_economies"
+version = "0.1.0"
+description = "Social Reward Economies"
+authors = [{name = "Aaron Avram", email = "tudor.avram@icloud.com"}]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "pytest",
+    "pylint"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
