@@ -452,7 +452,7 @@ def _deterministic_norm_welfare(system: MultiAgentSystem, norm_actions: Sequence
     Evaluate followers-only paper welfare for a deterministic norm:
     norm_actions[s] is the chosen action in state s.
     """
-    p_s = np.ones(system.config.num_states, dtype=float) / float(system.config.num_states)
+    p_s = np.ones(system.config.dims.num_states, dtype=float) / float(system.config.dims.num_states)
     total = 0.0
 
     for i, agent in enumerate(system.agents):
@@ -462,9 +462,9 @@ def _deterministic_norm_welfare(system: MultiAgentSystem, norm_actions: Sequence
         theta_participant = 1.0 - np.exp(-float(agent.state.participant_interaction_rate))
 
         U_i = 0.0
-        for s in range(system.config.num_states):
+        for s in range(system.config.dims.num_states):
             action = int(norm_actions[s])
-            u_i_sx = system.compute_observer_utility(i, s, action)
+            u_i_sx = system.rewards.observer_utility(i, s, action)
             U_i += float(p_s[s]) * float(u_i_sx)
 
         total += theta_participant * U_i
@@ -479,8 +479,8 @@ def _leader_greedy_norm(system: MultiAgentSystem, leader_id: int) -> Tuple[int, 
     """
     leader = system.agents[int(leader_id)]
     actions = []
-    for s in range(system.config.num_states):
-        pi_s = leader.get_current_policy(s)
+    for s in range(system.config.dims.num_states):
+        pi_s = leader.get_current_policy(s, leader.get_behavior_weights())
         actions.append(int(np.argmax(pi_s)))
     return tuple(actions)
 
@@ -490,8 +490,8 @@ def _bruteforce_best_norm(system: MultiAgentSystem, leader_id: int) -> Tuple[Tup
     Exhaustively search all deterministic norms.
     Only feasible for small num_actions ** num_states.
     """
-    num_states = int(system.config.num_states)
-    num_actions = int(system.config.num_actions)
+    num_states = int(system.config.dims.num_states)
+    num_actions = int(system.config.dims.num_actions)
 
     total_norms = num_actions ** num_states
     if total_norms > 50000:
