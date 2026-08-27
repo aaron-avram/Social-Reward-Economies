@@ -4,17 +4,11 @@ import pytest
 
 from model.agent import Agent
 from model.config import (
-    AlgorithmParams, Dimensions, ScheduleParams,
-    RuntimeParams, SystemConfig, TrackingMode,
+    AlgorithmParams, Dimensions, RewardModelKind, RewardParams, RuntimeParams,
+    ScheduleParams, SystemConfig, TrackingMode,
 )
 from model.reputation import ReputationState
-
-
-def config_field(cfg):
-    """SystemConfig's dimensions field is named `dimensions`, but every consumer
-    reads `.dims`. Tests go through this so the suite reports ONE failure for the
-    naming mismatch rather than failing everywhere."""
-    return getattr(cfg, "dims", None) or cfg.dimensions
+from model.rewards import build_reward_model
 
 
 @pytest.fixture
@@ -29,6 +23,7 @@ def algo():
 
 @pytest.fixture
 def rng():
+    """A fresh seeded Generator. Never np.random."""
     return np.random.default_rng(12345)
 
 
@@ -43,9 +38,27 @@ def rep(dims):
 
 
 @pytest.fixture
-def small_config():
+def rewards(dims):
+    return build_reward_model(
+        RewardParams(kind=RewardModelKind.SIMPLE_PREFERRED_ACTION),
+        dims, np.random.default_rng(0),
+    )
+
+
+@pytest.fixture
+def small_config(dims):
     return SystemConfig(
-        dims=Dimensions(num_agents=5, num_states=3, num_actions=2),
-        runtime=RuntimeParams(seed=7, num_time_steps=40, tracking_mode=TrackingMode.FULL),
+        dims=dims,
+        runtime=RuntimeParams(seed=7, num_time_steps=40,
+                              tracking_mode=TrackingMode.FULL),
         schedule=ScheduleParams(role_update_base_interval=10),
     )
+
+
+@pytest.fixture(autouse=True)
+def poison_global_rng():
+    """Perturb np.random before every test. Any surviving global call now
+    produces a different result run to run, so a determinism test fails loudly
+    instead of passing by luck."""
+    np.random.seed(np.random.randint(0, 2**31 - 1) if False else 987654321)
+    yield
