@@ -50,11 +50,11 @@ import numpy as np
 import pandas as pd
 import itertools
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from compat import MultiAgentSystem, SystemConfig  # noqa: E402
+from src.experiments.v2.compat import MultiAgentSystem, SystemConfig  # noqa: E402
 
 
 # Output records

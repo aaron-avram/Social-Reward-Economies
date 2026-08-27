@@ -56,7 +56,7 @@ def _load(path: Path, name: str):
 @pytest.fixture(scope="session")
 def old_engine():
     """The frozen pre-refactor engine, as the v1 harnesses import it."""
-    return _load(ROOT / "src" / "code_debugged.py", "_old_engine")
+    return _load(ROOT / "src" / "benchmark_code.py", "_old_engine")
 
 
 @pytest.fixture(scope="session")
