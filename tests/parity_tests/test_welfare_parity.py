@@ -10,7 +10,7 @@ pins the size of the difference rather than demanding zero.
 import numpy as np
 import pytest
 
-from parity.harness import bench_system, load_benchmark, set_bench_rep_state
+from .harness import bench_system, load_benchmark, set_bench_rep_state
 from model.agent import Agent, AgentRole
 from model.config import AlgorithmParams, Dimensions, RewardParams, RewardModelKind
 from model.rewards import build_reward_model

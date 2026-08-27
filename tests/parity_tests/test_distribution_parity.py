@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import numpy as np
 import pytest
 
-from parity.harness import load_benchmark
+from .harness import load_benchmark
 from model.config import (
     Dimensions, RuntimeParams, ScheduleParams, SystemConfig, TrackingMode,
 )

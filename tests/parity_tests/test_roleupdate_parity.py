@@ -14,7 +14,7 @@ order isolates the algorithm.
 import numpy as np
 import pytest
 
-from parity.harness import (
+from .harness import (
     bench_system, load_benchmark, read_bench_graph, read_pkg_graph, set_bench_rep_state,
 )
 from model.agent import Agent

@@ -10,14 +10,9 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-BENCH_PATH = Path(__file__).resolve().parents[2] / "benchmark_code.py"
+BENCH_PATH = Path(__file__).parent / "benchmark_code.py"
 
-if not BENCH_PATH.exists():
-    pytest.skip("benchmark_code.py not present — parity suite retired",
-                allow_module_level=True)
-
-pytestmark = pytest.mark.parity
-
+collect_ignore_glob = ["test_*.py"] if not BENCH_PATH.exists() else []
 
 @pytest.fixture(scope="session")
 def benchmark():

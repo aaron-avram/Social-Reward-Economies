@@ -9,7 +9,7 @@ the tie-break is deterministic.
 import numpy as np
 import pytest
 
-from parity.harness import (
+from .harness import (
     bench_system, load_benchmark, read_bench_rep_state, set_bench_rep_state,
 )
 from model.config import AlgorithmParams, Eq9Mode, LeaderUpdateMode
