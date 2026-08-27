@@ -54,7 +54,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from experiments.compat import MultiAgentSystem, SystemConfig  # noqa: E402
+from .compat import MultiAgentSystem, SystemConfig  # noqa: E402
 
 
 # Output records
