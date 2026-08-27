@@ -4,8 +4,8 @@ from pathlib import Path
 
 import numpy as np
 
-BENCH_PATH = Path(__file__).resolve().parent / "benchmark_code.py"
-
+ROOT = Path(__file__).resolve().parents[2]
+BENCH_PATH = ROOT / "src" / "benchmark_code.py"
 
 def load_benchmark():
     spec = importlib.util.spec_from_file_location("benchmark_code", BENCH_PATH)

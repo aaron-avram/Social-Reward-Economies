@@ -6,7 +6,7 @@ mistake is cheapest to catch.
 import numpy as np
 import pytest
 
-from experiments import compat
+from experiments.v2 import compat
 from model.config import (
     ActorRateDriverMode, Eq9Mode, LeaderUpdateMode, RewardModelKind, TrackingMode,
 )

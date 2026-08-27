@@ -10,7 +10,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-BENCH_PATH = Path(__file__).parent / "benchmark_code.py"
+ROOT = Path(__file__).resolve().parents[2]
+BENCH_PATH = ROOT / "src" / "benchmark_code.py"
 
 collect_ignore_glob = ["test_*.py"] if not BENCH_PATH.exists() else []
 

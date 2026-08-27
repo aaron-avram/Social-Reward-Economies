@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-EXP = ROOT / "experiments"
+EXP = ROOT / "src" / "experiments"
 
 pytestmark = pytest.mark.experiment
 
@@ -49,7 +49,7 @@ HARNESSES = [
 
 def _script(name: str, version: str) -> str:
     base = name.replace("_async", "")
-    return str(EXP / f"{base}_{version}.py")
+    return str(EXP / version / f"{base}.py")
 
 
 def _run(name: str, version: str, args: list[str], outdir: Path) -> None:

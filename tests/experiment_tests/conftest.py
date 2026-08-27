@@ -62,7 +62,7 @@ def old_engine():
 @pytest.fixture(scope="session")
 def new_engine():
     """compat.SystemConfig / MultiAgentSystem — the v2 harnesses' entry point."""
-    from experiments import compat
+    from experiments.v2 import compat
     return compat
 
 
