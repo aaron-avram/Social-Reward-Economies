@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-BENCH_PATH = Path(__file__).resolve().parents[1] / "benchmark_code.py"
+BENCH_PATH = Path(__file__).resolve().parent / "benchmark_code.py"
 
 
 def load_benchmark():
