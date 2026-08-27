@@ -1,0 +1,4 @@
+mode,reward_model,num_states,seed,leader_id,leader_role_final,final_top_followers,time_to_50pct_followers,time_to_90pct_followers,leader_switches,tail_welfare,final_pu,final_rep,final_status,tail_top_follower_share
+static,shared_base_gaussian,10,0,-1,none,0,-1,-1,0,28.123942854332537,100,0,0,0.0
+static,shared_base_gaussian,10,1,-1,none,0,-1,-1,0,22.13428995280135,100,0,0,0.0
+static,shared_base_gaussian,10,2,-1,none,0,-1,-1,0,24.000200383488224,100,0,0,0.0
