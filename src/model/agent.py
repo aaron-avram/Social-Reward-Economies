@@ -73,8 +73,8 @@ class Agent:
 
         # Ensure policy parameter shapes follow runtime config (num_states, num_actions).
         # AgentState defaults are placeholders and may not match experiment overrides.
-        self.state.weights_pu = self.rng.standard_normal(self.dims.num_states, self.dims.num_actions) * 0.1
-        self.state.weights_status = self.rng.standard_normal(self.dims.num_states, self.dims.num_actions) * 0.1
+        self.state.weights_pu = self.rng.standard_normal((self.dims.num_states, self.dims.num_actions)) * 0.1
+        self.state.weights_status = self.rng.standard_normal((self.dims.num_states, self.dims.num_actions)) * 0.1
 
         # Initialize reputation and personal benefit estimates for all agents
         for other_id in range(self.dims.num_agents):

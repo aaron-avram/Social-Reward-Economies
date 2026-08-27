@@ -76,7 +76,7 @@ def test_config_dict_is_json_serialisable():
 
 def test_config_dict_unwraps_enums():
     d = C.SystemConfig().to_dict()
-    assert d["reward"]["model"] == "simple_preferred_action"
+    assert d["reward"]["kind"] == "simple_preferred_action"
     assert d["runtime"]["tracking_mode"] == "full"
 
 
@@ -84,7 +84,7 @@ def test_param_groups_are_frozen_or_replace_is_deep():
     """A sweep that mutates cfg.algorithm.gamma must not affect the base config.
     Either the groups are frozen (mutation raises) or replace() deep-copies."""
     base = C.SystemConfig()
-    derived = replace(base, dimensions=base.dims) if hasattr(base, "dims") else replace(base)
+    derived = replace(base, dims=base.dims) if hasattr(base, "dims") else replace(base)
     try:
         derived.algorithm.gamma = 99.0
     except FrozenInstanceError:
