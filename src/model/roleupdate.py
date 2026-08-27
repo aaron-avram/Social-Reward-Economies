@@ -148,7 +148,7 @@ def step1_reputation(
     rec: Recorder = NullRecorder(),
 ) -> None:
     """
-    Followerless agents decide whether to follow their highest-reputation target.
+    Agents decide whether to follow their highest-reputation target.
 
     Condition [ROLE-2], Section 7.3:   γ · s_i(L_i, t)  >  max(B_i, Ĵ^pu_i)
 
@@ -222,6 +222,7 @@ def step1_reputation(
         state.P.discard(i)
 
         rec.role_update_decision(i, "FOLLOW_REDIRECT" if target_was_follower else "FOLLOW_DIRECT")
+    print(state.following)
 
 # ============================================================================
 # Step 2 — Status (Section 7.4)

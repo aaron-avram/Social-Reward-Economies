@@ -174,7 +174,7 @@ def test_step1_rehomes_existing_followers_to_the_new_leader():
     st.followers[0] = {3, 4}
     st.following[3] = st.following[4] = 0
     sig = signals(5, target_rep=1.0, target=[1] * 5)
-    RU.step1_reputation(st, sig, {0}, 5, AlgorithmParams(gamma=2.0),
+    RU.step1_reputation(st, sig, {0,1,2,3,4}, 5, AlgorithmParams(gamma=2.0),
                         np.random.default_rng(0), NullRecorder())
     assert st.following[3] == 1 and st.following[4] == 1
     assert {3, 4} <= st.followers[1]

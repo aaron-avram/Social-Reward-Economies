@@ -106,7 +106,7 @@ class SharedGoodBadHeterogeneous(RewardModel):
         base = np.full((num_states, num_actions), float(params.bad_value), dtype=float)
         base[np.arange(num_states), good_actions] = float(params.good_value)
 
-        table = rng.init.normal(
+        table = rng.normal(
             loc=base[np.newaxis, :, :],
             scale=float(params.agent_sigma),
             size=(num_agents, num_states, num_actions),
@@ -120,8 +120,8 @@ class SharedGoodBadHeterogeneous(RewardModel):
                 if not bad_actions:
                     continue
 
-                good_val = float(np.clip(self.table[agent_id, state, good_action], clip_min + gap, clip_max))
-                bad_vals = np.clip(self.table[agent_id, state, bad_actions], clip_min, clip_max)
+                good_val = float(np.clip(table[agent_id, state, good_action], clip_min + gap, clip_max))
+                bad_vals = np.clip(table[agent_id, state, bad_actions], clip_min, clip_max)
 
                 max_bad = float(np.max(bad_vals))
                 if good_val < max_bad + gap:
@@ -134,8 +134,8 @@ class SharedGoodBadHeterogeneous(RewardModel):
                     good_val = min(clip_max, max_bad + gap)
                     bad_vals = np.minimum(bad_vals, good_val - gap)
 
-                self.table[agent_id, state, good_action] = good_val
-                self.table[agent_id, state, bad_actions] = bad_vals
+                table[agent_id, state, good_action] = good_val
+                table[agent_id, state, bad_actions] = bad_vals
         self._shared_good_actions = good_actions
 
         return table
