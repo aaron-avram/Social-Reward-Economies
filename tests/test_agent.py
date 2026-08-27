@@ -2,8 +2,8 @@
 import numpy as np
 import pytest
 
-from src.agent import Agent, AgentRole, AgentState
-from src.config import ActorRateDriverMode, AlgorithmParams, Dimensions
+from model.agent import Agent, AgentRole
+from model.config import ActorRateDriverMode, AlgorithmParams, Dimensions
 
 
 def _agent(agent_id=0, **kw):

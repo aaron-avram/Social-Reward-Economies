@@ -4,10 +4,10 @@ import json
 import numpy as np
 import pytest
 
-from src.agent import Agent, AgentRole
-from src.config import AlgorithmParams, Dimensions, Eq9Mode, LeaderUpdateMode
-from src import instrumentation as I
-from src.roleupdate import AgentSignals, RoleUpdateState
+from model.agent import Agent, AgentRole
+from model.config import AlgorithmParams, Dimensions, Eq9Mode, LeaderUpdateMode
+from model import instrumentation as I
+from model.roleupdate import AgentSignals, RoleUpdateState
 
 
 DIMS = Dimensions(num_agents=3, num_states=3, num_actions=2)
@@ -108,7 +108,7 @@ def test_role_update_end_flushes_with_final_role():
 
 
 def _tr(n=3):
-    from src.welfare import TrueReputation
+    from model.welfare import TrueReputation
     return TrueReputation(
         expected_utilities=np.zeros((n, n)), theta_mu=np.ones(n),
         sum_expected_utility_others=np.ones(n), true_reputation=np.arange(n, dtype=float),

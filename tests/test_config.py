@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError, replace, fields
 
 import pytest
 
-from src import config as C
+from model import config as C
 
 
 def test_instances_are_independent():

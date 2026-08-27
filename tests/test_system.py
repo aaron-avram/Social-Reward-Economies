@@ -2,13 +2,12 @@
 import numpy as np
 import pytest
 
-from src.agent import AgentRole
-from src.config import (
-    AlgorithmParams, Dimensions, RewardModelKind, RewardParams, RuntimeParams,
+from model.config import (
+    Dimensions, RewardModelKind, RuntimeParams,
     ScheduleParams, SystemConfig, TrackingMode,
 )
-from src.instrumentation import FullRecorder, NullRecorder
-from src.system import MultiAgentSystem
+from model.instrumentation import FullRecorder, NullRecorder
+from model.system import MultiAgentSystem
 
 
 def cfg(**runtime):

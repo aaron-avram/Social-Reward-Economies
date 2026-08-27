@@ -4,7 +4,7 @@ import inspect
 
 import pytest
 
-import src
+import model
 
 MODULES = ["agent", "config", "instrumentation", "plots", "reputation", "results",
            "rewards", "rng", "roles", "roleupdate", "system", "welfare"]
@@ -49,6 +49,6 @@ def test_no_module_below_system_imports_system():
 
 
 def test_agent_does_not_import_reputation_or_roleupdate():
-    _src = inspect.getsource(src.agent) if hasattr(src, "agent") else \
+    _src = inspect.getsource(model.agent) if hasattr(model, "agent") else \
         inspect.getsource(importlib.import_module("socialreward.agent"))
     assert "reputation" not in _src.split('"""')[0] + _src.split('"""')[-1]

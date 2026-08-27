@@ -2,12 +2,12 @@
 import numpy as np
 import pytest
 
-from src.agent import Agent, AgentRole, AgentState
-from src.config import (
-    AlgorithmParams, Dimensions, RewardParams, RewardModelKind, ScheduleParams,
-    StepsizeParams, RuntimeParams, SystemConfig, TrackingMode,
+from model.agent import Agent
+from model.config import (
+    AlgorithmParams, Dimensions, ScheduleParams,
+    RuntimeParams, SystemConfig, TrackingMode,
 )
-from src.reputation import ReputationState, NO_LEADER
+from model.reputation import ReputationState
 
 
 def config_field(cfg):

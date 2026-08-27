@@ -2,11 +2,11 @@
 import numpy as np
 import pytest
 
-from src.agent import Agent, AgentRole
-from src.config import AlgorithmParams, Dimensions, ScheduleParams
-from src.instrumentation import NullRecorder
-from src import roleupdate as RU
-from src.reputation import NO_LEADER
+from model.agent import Agent, AgentRole
+from model.config import AlgorithmParams, Dimensions, ScheduleParams
+from model.instrumentation import NullRecorder
+from model import roleupdate as RU
+from model.reputation import NO_LEADER
 
 
 DIMS = Dimensions(num_agents=5, num_states=3, num_actions=2)

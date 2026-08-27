@@ -2,10 +2,10 @@
 import numpy as np
 import pytest
 
-from src.agent import Agent, AgentRole
-from src.config import AlgorithmParams, Dimensions, RewardParams
-from src.rewards import SimplePreferredAction, SharedBaseGaussian
-from src import welfare as W
+from model.agent import Agent, AgentRole
+from model.config import AlgorithmParams, Dimensions, RewardParams
+from model.rewards import SimplePreferredAction, SharedBaseGaussian
+from model import welfare as W
 
 
 DIMS = Dimensions(num_agents=4, num_states=3, num_actions=2)
@@ -22,7 +22,7 @@ def rewards(dims=DIMS):
 
 def test_current_policies_shape_and_normalisation():
     ags = agents()
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     assert pol.shape == (4, 3, 2)
     assert np.allclose(pol.sum(axis=2), 1.0)
 
@@ -32,7 +32,7 @@ def test_current_policies_uses_leader_weights_for_followers():
     ags[0].state.role = AgentRole.REPUTATION
     ags[0].state.following = 1
     leader = np.array([[10.0, 0.0], [10.0, 0.0], [10.0, 0.0]])
-    pol = W.current_policies(ags, 3, {0: leader})
+    pol = W.current_policies(ags, {0: leader})
     assert pol[0, 0, 0] > 0.99
 
 
@@ -40,21 +40,21 @@ def test_current_policies_uses_status_weights_for_status_agents():
     ags = agents()
     ags[2].state.role = AgentRole.STATUS
     ags[2].state.weights_status = np.array([[0.0, 10.0]] * 3)
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     assert pol[2, 0, 1] > 0.99
 
 
 def test_current_policies_does_not_mutate_agents():
     ags = agents()
     before = [a.state.weights_pu.copy() for a in ags]
-    W.current_policies(ags, 3, {})
+    W.current_policies(ags, {})
     assert all(np.array_equal(a.state.weights_pu, b) for a, b in zip(ags, before))
 
 
 def test_expected_observer_utilities_matches_the_explicit_loop():
     ags = agents()
     rw = SharedBaseGaussian(RewardParams(), DIMS, np.random.default_rng(0))
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     got = W.expected_observer_utilities(pol, rw)
 
     n, s_n = DIMS.num_agents, DIMS.num_states
@@ -82,7 +82,7 @@ def test_expected_observer_utilities_orientation():
 
 def test_true_reputation_fields_and_shapes():
     ags = agents()
-    tr = W.true_reputation(ags, W.current_policies(ags, 3, {}), rewards())
+    tr = W.true_reputation(ags, W.current_policies(ags, {}), rewards())
     n = len(ags)
     assert tr.true_reputation.shape == (n,)
     assert tr.true_rank.shape == (n,)
@@ -92,7 +92,7 @@ def test_true_reputation_fields_and_shapes():
 
 def test_true_reputation_excludes_self_utility():
     ags = agents()
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     rw = SharedBaseGaussian(RewardParams(), DIMS, np.random.default_rng(0))
     tr = W.true_reputation(ags, pol, rw)
     expected = W.expected_observer_utilities(pol, rw)
@@ -102,7 +102,7 @@ def test_true_reputation_excludes_self_utility():
 
 def test_true_reputation_ranks_by_value_then_id():
     ags = agents()
-    tr = W.true_reputation(ags, W.current_policies(ags, 3, {}), rewards())
+    tr = W.true_reputation(ags, W.current_policies(ags, {}), rewards())
     order = np.argsort(tr.true_rank)
     vals = tr.true_reputation[order]
     assert all(vals[i] >= vals[i + 1] - 1e-12 for i in range(len(vals) - 1))
@@ -116,7 +116,7 @@ def test_true_reputation_unique_top_is_minus_one_when_tied():
     dims = Dimensions(num_agents=3, num_states=3, num_actions=2)
     rw = SimplePreferredAction(RewardParams(), dims, np.random.default_rng(0))
     # all three identical -> exact tie
-    tr = W.true_reputation(ags, W.current_policies(ags, 3, {}), rw)
+    tr = W.true_reputation(ags, W.current_policies(ags, {}), rw)
     assert tr.unique_true_top_agent == -1 or int(tr.exact_top_mask.sum()) == 1
 
 
@@ -146,7 +146,7 @@ def test_resolve_root_leader_handles_no_leader():
 def test_paper_welfare_all_vs_followers_differ_by_the_leader_term():
     ags = agents()
     ags[1].state.followers = {0, 2}
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     rw = SharedBaseGaussian(RewardParams(), DIMS, np.random.default_rng(0))
     w_all = W.paper_welfare(ags, pol, rw, 3, leader_id=1)
     w_fol = W.paper_welfare(ags, pol, rw, 3, leader_id=1, exclude_leader=True)
@@ -158,7 +158,7 @@ def test_paper_welfare_all_vs_followers_differ_by_the_leader_term():
 
 def test_paper_welfare_uses_participant_not_actor_rates():
     ags = agents()
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     rw = rewards()
     base = W.paper_welfare(ags, pol, rw, 3, leader_id=0)
     for a in ags:
@@ -172,7 +172,7 @@ def test_paper_welfare_uses_participant_not_actor_rates():
 def test_paper_welfare_defaults_to_the_current_leader():
     ags = agents()
     ags[3].state.followers = {0}
-    pol = W.current_policies(ags, 3, {})
+    pol = W.current_policies(ags, {})
     rw = rewards()
     assert W.paper_welfare(ags, pol, rw, 3) == pytest.approx(
         W.paper_welfare(ags, pol, rw, 3, leader_id=3))

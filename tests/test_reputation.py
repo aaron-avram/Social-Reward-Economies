@@ -2,9 +2,9 @@
 import numpy as np
 import pytest
 
-from src.config import AlgorithmParams, Eq9Mode, LeaderUpdateMode
-from src import reputation as REP
-from src.reputation import NO_LEADER, ReputationState
+from model.config import AlgorithmParams, Eq9Mode, LeaderUpdateMode
+from model import reputation as REP
+from model.reputation import NO_LEADER, ReputationState
 
 
 def _state(n=5):

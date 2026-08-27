@@ -2,8 +2,7 @@
 import numpy as np
 import pytest
 
-from src.agent import AgentRole
-from src.results import SimulationResults, StepRecord
+from model.results import SimulationResults, StepRecord
 
 
 def rec(t=1, **kw):
@@ -124,7 +123,7 @@ def test_npz_roundtrip_preserves_core_history(tmp_path):
 
 
 def test_from_npz_rejects_a_stale_schema(tmp_path, monkeypatch):
-    import src.results as RES
+    import model.results as RES
     r = SimulationResults(); r.append(rec())
     path = str(tmp_path / "old.npz")
     r.to_npz(path, {})

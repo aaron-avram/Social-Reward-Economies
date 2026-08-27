@@ -1,7 +1,7 @@
 """rng.py — stream independence is what makes baselines survive future edits."""
 import numpy as np
 
-from src.rng import RngBundle
+from model.rng import RngBundle
 
 
 def test_same_seed_reproduces():

@@ -2,8 +2,8 @@
 import numpy as np
 import pytest
 
-from src.config import Dimensions, RewardModelKind, RewardParams
-from src import rewards as R
+from model.config import Dimensions, RewardModelKind, RewardParams
+from model import rewards as R
 
 
 def _dims(a=5, s=3, act=2):

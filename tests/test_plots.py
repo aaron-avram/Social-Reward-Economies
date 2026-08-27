@@ -5,10 +5,10 @@ matplotlib.use("Agg")
 import numpy as np
 import pytest
 
-from src.agent import AgentRole
-from src.config import Dimensions, SystemConfig
-from src import plots
-from src.results import SimulationResults, StepRecord
+from model.agent import AgentRole
+from model.config import Dimensions, SystemConfig
+from model import plots
+from model.results import SimulationResults, StepRecord
 
 
 def build(n_steps=10, full=True):
