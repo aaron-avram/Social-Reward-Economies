@@ -1,6 +1,7 @@
 """system.py — orchestration, plus the end-to-end invariants."""
 import numpy as np
 import pytest
+from dataclasses import replace
 
 from model.config import (
     Dimensions, RewardModelKind, RuntimeParams,
@@ -131,7 +132,7 @@ def test_force_all_active_activates_everyone():
 @pytest.mark.parametrize("kind", list(RewardModelKind))
 def test_runs_under_every_reward_model(kind):
     c = cfg(num_time_steps=10)
-    c.reward.model = kind
+    replace(c.reward, kind=kind)
     MultiAgentSystem(c).simulate()
 
 
@@ -166,7 +167,16 @@ def test_common_random_numbers_across_a_parameter_change():
     """Activation draws must be indexed by (seed, agent, t), not by how many
     agents happened to activate, or paired sweep comparisons break."""
     c1, c2 = cfg(num_time_steps=1), cfg(num_time_steps=1)
-    c2.algorithm.gamma = 5.0
+    replace(c2.algorithm, gamma=5.0)
     a, b = MultiAgentSystem(c1), MultiAgentSystem(c2)
     a.step(); b.step()
     assert a.results.actor_counts == b.results.actor_counts
+
+def test_refresh_does_not_disturb_activation_counts():
+    """
+    Test recordrRefresh
+    """
+    s = MultiAgentSystem(cfg()); s.step()
+    before = list(s.results.actor_counts)
+    s.update_roles([0, 1])
+    assert s.results.actor_counts == before

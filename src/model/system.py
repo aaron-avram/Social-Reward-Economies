@@ -111,7 +111,7 @@ class MultiAgentSystem:
             k = int(k)
             agent = self.agents[k]
             s = int(states[k])
-            x = agent.select_action(s, float(uniforms[k]), leader_weights)
+            x = agent.select_action(s, float(uniforms[k]), leader_weights.get(k))
             actions[k] = (s, x)
 
             observer_utilities = self.rewards.observer_utilities(s, x)
@@ -173,13 +173,39 @@ class MultiAgentSystem:
                         sizes.beta_status, sizes.eta_J
                     )
 
+    def _build_refresh_record(self) -> StepRecord:
+        """Only the fields overwrite_last() reads. The activation counts and
+        payoff-derived fields are deliberately not refreshed (1320-1404)."""
+        return self._build_step_record(payoffs={}, num_actors=0, num_participants=0)
+
+    def update_roles(self, candidates=None, refresh: bool = True) -> None:
+        """
+        Public entry point for asynchronous subset role updates.
+
+        Replaces the harness-facing _update_roles_sequential(candidates) plus the
+        separate refresh_last_tracked_state() call: the refresh is folded in, so
+        timestep t reflects the post-update follower graph.
+        """
+        update_roles_sequential(
+            self.agents,
+            self.rep.s,
+            self.rep.L,
+            self.config.algorithm,
+            self.rng.order,
+            t=self.time_step,
+            update_candidates=candidates,
+            rec=self.rec,
+        )
+        if refresh:
+            self.results.overwrite_last(self._build_refresh_record())
+
     def _leader_weights(self) -> dict[int, np.ndarray]:
         return {
             i: self.agents[a.state.following].get_behavior_weights()
             for i, a in enumerate(self.agents)
             if a.state.role is AgentRole.REPUTATION and a.state.following is not None
         }
-
+    
     def _reputation_learning(self, U, actor_ids, participant_ids, sizes) -> None:
         """
         PHASE 4. One call now, not two implementations.
@@ -240,15 +266,7 @@ class MultiAgentSystem:
         """
         fired = self.schedule.due_count(self.time_step)
         for _ in range(fired):
-            update_roles_sequential(
-                self.agents,
-                self.rep.s,
-                self.rep.L,
-                self.config.algorithm,
-                self.rng.order,
-                t=self.time_step,
-                rec=self.rec,
-            )
+            self.update_roles(refresh=False)
         return fired > 0
 
     def step(self) -> None:
@@ -356,7 +374,7 @@ class MultiAgentSystem:
         """Shared by _track and the async refresh path, so both see identical fields."""
         mode = self.config.runtime.tracking_mode
         full = mode is TrackingMode.FULL
-        compact = full or self.rec.wants_compact_histories
+        compact = full or self.rec.wants_compact_history
 
         policies = self._policies()
         leader = current_opinion_leader(self.agents)
