@@ -1,0 +1,14 @@
+Add to pyproject.toml so `pytest` stays fast by default:
+
+[tool.pytest.ini_options]
+markers = [
+    "parity: compares the engine against the frozen benchmark (slow)",
+    "experiment: compares v1/v2 harnesses end to end (slow, ~2 min)",
+]
+addopts = "-m 'not parity and not experiment'"
+
+Then:
+  pytest                    # unit tests only, seconds
+  pytest -m experiment      # the v1/v2 comparison
+  pytest -m parity          # the engine/benchmark comparison
+  pytest -m ''              # everything
