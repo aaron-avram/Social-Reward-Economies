@@ -1,0 +1,2 @@
+mode,gamma,kappa,n_runs,conv_rate,drop_rate,normless_rate,recovery_rate,stable_recovery_rate,mean_drop_fraction,std_drop_fraction,ci95_drop_fraction,mean_normless_duration,std_normless_duration,ci95_normless_duration,mean_recovery_time,std_recovery_time,ci95_recovery_time,mean_final_top_followers,std_final_top_followers,ci95_final_top_followers
+static,5.0,2.0,3,1.0,1.0,1.0,0.3333333333333333,0.3333333333333333,1.0,0.0,0.0,25334.0,11547.582734061705,13067.320000000002,30349.0,0.0,0.0,16.333333333333332,28.290163190291665,32.013333333333335

@@ -216,6 +216,23 @@ class MultiAgentSystem(_MultiAgentSystem):  # noqa: N801 - mimics the old class
         self.results = _ResultsProxy(self.results)
         self.role_update_epoch = 0
 
+
+    # --- reward internals: attributes on the old system, now on the model ---
+
+    @property
+    def _shared_good_actions(self):
+        """Only SharedGoodBadHeterogeneous defines this; None otherwise, matching
+        the old engine, which left the attribute None for other reward models."""
+        return getattr(self.rewards, "_shared_good_actions", None)
+
+    @property
+    def _reward_tables(self):
+        """The old engine used None to mean 'no table, fall back to
+        preferred_action'. Every model materialises a table now, so this is
+        always an array — check any `is not None` guards in a harness before
+        relying on the old semantics."""
+        return self.rewards.table
+    
     # --- audit enablers: methods in the old API, recorder flags in the new one ---
 
     def _ensure_full_recorder(self, **flags) -> None:

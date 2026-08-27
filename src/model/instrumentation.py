@@ -65,7 +65,7 @@ class Recorder(Protocol):
     @property
     def wants_dense_history(self) -> bool: ...
     @property
-    def wants_compact_histories(self) -> bool: ...
+    def wants_compact_history(self) -> bool: ...
 
 
 class NullRecorder:
@@ -114,7 +114,7 @@ class FullRecorder:
     _t: int = 0
 
     @property
-    def wants_compact_histories(self) -> bool:
+    def wants_compact_history(self) -> bool:
         """The per-agent estimate/rate/leader histories.
 
         Both enable_async_decision_audit (781-782) and enable_small_n_trace_export

@@ -661,15 +661,15 @@ def _compute_step1_diagnostic_terms(
 
     in_C = len(agent.state.followers) == 0
     in_R = agent.state.role == AgentRole.REPUTATION
-    hysteresis_active = bool(in_C and in_R and float(config.B_F) < float(config.B_R))
-    B_i = float(config.B_F) if hysteresis_active else float(config.B_R)
+    hysteresis_active = bool(in_C and in_R and float(config.algorithm.B_F) < float(config.algorithm.B_R))
+    B_i = float(config.algorithm.B_F) if hysteresis_active else float(config.algorithm.B_R)
 
     target_k = agent.state.highest_rep_agent_estimate
     selected_rep_raw = 0.0
     if target_k is not None:
         selected_rep_raw = float(agent.state.reputation_estimates.get(target_k, 0.0))
 
-    selected_rep_weighted = float(config.gamma) * selected_rep_raw
+    selected_rep_weighted = float(config.algorithm.gamma) * selected_rep_raw
     est_pu = float(agent.state.estimated_reward_pu)
     threshold = max(B_i, est_pu)
 
