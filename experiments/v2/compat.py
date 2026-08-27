@@ -19,7 +19,7 @@ what the engine actually offers.
 """
 
 from dataclasses import replace
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Iterable, Optional
 
 import numpy as np
 

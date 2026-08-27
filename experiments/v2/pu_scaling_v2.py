@@ -583,8 +583,8 @@ def run_single(
         last_est_status = final_est_status[-1] if len(final_est_status) > 0 else [float("nan")] * args.num_agents
         last_actor_rates = final_actor_rates[-1] if len(final_actor_rates) > 0 else [float("nan")] * args.num_agents
 
-        true_rep_snapshot = system._compute_true_reputation_vector()
-        true_rep = np.asarray(true_rep_snapshot["true_reputation"], dtype=float)
+        true_rep_snapshot = system._true_reputation()
+        true_rep = np.asarray(true_rep_snapshot.true_reputation, dtype=float)
 
         for agent_id in range(args.num_agents):
             agent_trace_rows.append(

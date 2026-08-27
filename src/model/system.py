@@ -18,7 +18,7 @@ from model.reputation import ReputationState, phase4, Phase4Trace, NO_LEADER
 from model.rewards import build_reward_model
 from model.rng import RngBundle
 from model.roleupdate import RoleUpdateSchedule, update_roles_sequential
-from model.welfare import true_reputation, current_policies, current_opinion_leader, paper_welfare
+from model.welfare import true_reputation, current_policies, current_opinion_leader, paper_welfare, TrueReputation
 
 class MultiAgentSystem:
 
@@ -294,6 +294,9 @@ class MultiAgentSystem:
         self._track(payoffs, len(actors), len(participants), updated)
 
     # ==================== tracking + run ====================
+
+    def _true_reputation(self) -> TrueReputation:
+        return true_reputation(self.agents, self._policies(), self.rewards)
 
     def _track(self, payoffs, num_actors, num_participants, role_updated: bool) -> None:
         """

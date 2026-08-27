@@ -37,7 +37,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.code_debugged import MultiAgentSystem, SystemConfig  # noqa: E402
+from tests.parity_tests.benchmark_code import MultiAgentSystem, SystemConfig  # noqa: E402
 
 
 # Output records
