@@ -164,11 +164,31 @@ def add_common_arguments(parser: ArgumentParser) -> None:
                    help="Per-agent per-step probability of reevaluating roles "
                         "in async mode. Default: 1/role_update_base_interval.")
 
+    g = parser.add_argument_group("modes")
+    g.add_argument("--eq9-averaging-mode", default="participants_only",
+                   choices=[m.value for m in Eq9Mode])
+    g.add_argument("--leader-update-mode", default="participants_only_post_eq9",
+                   choices=[m.value for m in LeaderUpdateMode])
+    g.add_argument("--actor-rate-driver-mode", default="standard",
+                   choices=[m.value for m in ActorRateDriverMode])
+    g.add_argument("--actor-rate-status-override-min-followers", type=int,
+                   default=10)
+    g.add_argument("--force-all-active-debug", action="store_true")
+    g.add_argument("--numpy-fast-path", action="store_true",
+                   help="Accepted and IGNORED. The two phase-4 implementations "
+                        "merged into one, so there is no longer a fast path to "
+                        "select. Kept so existing invocations keep working.")
+
     g = parser.add_argument_group("run")
     g.add_argument("--seeds", type=int, default=10)
     g.add_argument("--seed-base", type=int, default=20260101,
                    help="Root of the SeedSequence. The same seed set is used at "
                         "every grid point, making cross-point comparisons paired.")
+    g.add_argument("--selected-seeds", type=str, default="",
+                   help="Comma-separated replicate INDICES (0-based) to run, "
+                        "e.g. '3,7'. Not seed values: seeds come from a "
+                        "SeedSequence and are not consecutive, unlike v1's "
+                        "--seed-start.")
     g.add_argument("--tail-window", type=int, default=200)
     g.add_argument("--tracking-mode", choices=["full", "light"], default="light")
     g.add_argument("--output-dir", type=str,
@@ -191,6 +211,11 @@ def default_config(args: Namespace) -> SystemConfig:
             B_R=args.B_R, B_F=args.B_F, delta=args.delta,
             initial_actor_interaction_rate=args.initial_actor_rate,
             initial_participant_interaction_rate=args.initial_participant_rate,
+            actor_rate_status_override_min_followers=(
+                args.actor_rate_status_override_min_followers),
+            actor_rate_driver_mode=ActorRateDriverMode(args.actor_rate_driver_mode),
+            eq9_averaging_mode=Eq9Mode(args.eq9_averaging_mode),
+            leader_update_mode=LeaderUpdateMode(args.leader_update_mode),
         ),
         reward=RewardParams(
             kind=RewardModelKind(args.reward_model),
@@ -202,6 +227,7 @@ def default_config(args: Namespace) -> SystemConfig:
             seed=0,                       # set per run
             num_time_steps=args.num_steps,
             tracking_mode=TrackingMode(args.tracking_mode),
+            force_all_active_debug=args.force_all_active_debug,
         ),
         schedule=ScheduleParams(
             role_update_s0=args.role_update_s0,
@@ -278,8 +304,21 @@ def resolve_seeds(args: Namespace) -> list[int]:
     unlike sequential integer seeds.
     """
     root = np.random.SeedSequence(int(args.seed_base))
-    return [int(child.generate_state(1)[0] % (2**31 - 1))
-            for child in root.spawn(int(args.seeds))]
+    seeds = [int(child.generate_state(1)[0] % (2**31 - 1))
+             for child in root.spawn(int(args.seeds))]
+
+    chosen = getattr(args, "selected_seeds", "")
+    if chosen:
+        # Indices, not values: the seeds are not consecutive, so selecting by
+        # value would be unusable. Out-of-range indices are an error rather than
+        # a silent no-op, since a typo would otherwise run the whole sweep.
+        idx = parse_ints(chosen)
+        bad = [i for i in idx if not 0 <= i < len(seeds)]
+        if bad:
+            raise ValueError(f"--selected-seeds index out of range: {bad} "
+                             f"(have {len(seeds)} replicates)")
+        seeds = [seeds[i] for i in idx]
+    return seeds
 
 
 # ============================================================================

@@ -38,15 +38,24 @@ class StatusScaling(Experiment):
 
     name = "status_scaling"
 
+    gamma_default = "0,1,2,3,4"
+    kappa_default = "0,0.01,0.02,0.05,0.1"
+
     def add_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument("--gammas", type=str, default="0,1,2,3,4")
-        parser.add_argument("--kappas", type=str, default="0,0.01,0.02,0.05,0.1")
+        parser.add_argument("--gammas", type=str, default=self.gamma_default,
+                            help="Sweep values. Pass an empty string to use the "
+                                 "scalar --gamma instead.")
+        parser.add_argument("--kappas", type=str, default=self.kappa_default)
 
     def axes(self, args: Namespace) -> list[Axis]:
+        # An empty --gammas falls back to the scalar --gamma, so an experiment
+        # that does not want to sweep an axis can still set its value.
+        gammas = parse_floats(args.gammas) if args.gammas else [args.gamma]
+        kappas = parse_floats(args.kappas) if args.kappas else [args.kappa]
         return [
-            Axis("gamma", parse_floats(args.gammas),
+            Axis("gamma", gammas,
                  apply=lambda cfg, v: with_algorithm(cfg, gamma=v)),
-            Axis("kappa", parse_floats(args.kappas),
+            Axis("kappa", kappas,
                  apply=lambda cfg, v: with_algorithm(cfg, kappa=v)),
         ]
 
@@ -58,10 +67,8 @@ class ReputationStatusScaling(StatusScaling):
     """Same axes, different defaults. Was reputation_status_scaling.py."""
 
     name = "reputation_status_scaling"
-
-    def add_arguments(self, parser: ArgumentParser) -> None:
-        parser.add_argument("--gammas", type=str, default="0,2,4,6,8")
-        parser.add_argument("--kappas", type=str, default="0,1,2,4,8")
+    gamma_default = "0,2,4,6,8"
+    kappa_default = "0,1,2,4,8"
 
 
 class PuScaling(Experiment):
