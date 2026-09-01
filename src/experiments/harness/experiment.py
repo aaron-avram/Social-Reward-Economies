@@ -20,18 +20,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from experiments.harness.aggregate import AggregateColumn, aggregate, aggregate_columns
-from experiments.harness.axes import Axis, Grid
-from experiments.harness.cli import resolve_seeds
-from experiments.harness.plugins import (
+from src.experiments.harness.aggregate import AggregateColumn, aggregate, aggregate_columns
+from src.experiments.harness.axes import Axis, Grid
+from src.experiments.harness.cli import resolve_seeds
+from src.experiments.harness.plugins import (
     RunContext,
     RunPlugin,
     SweepContext,
     SweepPlugin,
     check_column_ownership,
 )
-from experiments.harness.runner import collect_record, run_single
-from experiments.harness.tables import write_csv
+from src.experiments.harness.runner import collect_record, run_single
+from src.experiments.harness.tables import write_csv
 
 
 @dataclass

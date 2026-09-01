@@ -30,7 +30,7 @@ from typing import List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from experiments.harness.cli import (
+from src.experiments.harness.cli import (
     interval_seq_from_epochs,
     parse_role_update_epochs,
     parse_role_update_T_seq,
