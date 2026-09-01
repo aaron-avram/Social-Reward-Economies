@@ -547,7 +547,7 @@ def apply_targeted_low_payoff_perturbation(
         action_scores = []
         for action in range(num_actions):
             mean_utility = float(
-                np.mean([system.compute_observer_utility(observer_id, state, action) for observer_id in target_ids])
+                np.mean([system.rewards.observer_utility(observer_id, state, action) for observer_id in target_ids])
             )
             action_scores.append(mean_utility)
 

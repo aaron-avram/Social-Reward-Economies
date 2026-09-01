@@ -15,7 +15,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 
-from src.experiments.harness.plugins import RunContext, RunPlugin
+from experiments.harness.plugins import RunContext, RunPlugin
 
 
 class ConsensusTrackerPlugin(RunPlugin):

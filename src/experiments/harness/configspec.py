@@ -33,7 +33,7 @@ from model.config import (
     TrackingMode,
 )
 
-from src.experiments.harness.schedule import async_role_interval_override
+from experiments.harness.schedule import async_role_interval_override
 
 #: Every legacy harness used these bases with a 0.01 decay.
 DEFAULT_STEPSIZES = StepsizeParams(
