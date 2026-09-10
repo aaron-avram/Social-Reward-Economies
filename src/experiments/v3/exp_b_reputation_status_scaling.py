@@ -73,8 +73,8 @@ def build_parser() -> argparse.ArgumentParser:
             "num_steps": 10000,
             "seeds": 20,
             "delta": 0.15,
-            "initial_actor_rate": 0.2,
-            "initial_participant_rate": 0.2,
+            "initial_actor_rate": 0.7,
+            "initial_participant_rate": 0.7,
             "reward_base_sigma": 0.08,
             "reward_agent_sigma": 0.1,
             "c_threshold": 0.1,
@@ -108,7 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
             "shared_good_bad_heterogeneous",
             "consensus_welfare_gaussian",
         ],
-        default="shared_base_gaussian",
+        default="consensus_welfare_gaussian",
         help="Reward model for payoff generation.",
     )
     group.add_argument(
