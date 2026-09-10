@@ -108,7 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
             "shared_good_bad_heterogeneous",
             "consensus_welfare_gaussian",
         ],
-        default="simple_preferred_action",
+        default="shared_base_gaussian",
         help="Reward model for payoff generation.",
     )
     group.add_argument(
