@@ -1,0 +1,209 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{array}
+
+\title{Norm Emergence Report: Resistance}
+\author{Aaron Avram}
+\date{September 13th 2026}
+
+\begin{document}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{claim}[theorem]{Claim}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{note}[theorem]{Note}
+
+\maketitle
+
+\section{Additions From the Report}
+\subsection*{Gossip}
+The student report identifies gossip as the central mechanism that connects agents and would drive resistance
+which is clear from the effect of gossip on the current simulations.
+However, I believe they misclassified its role in the emergence of a resist subgroup.
+
+Namely, the student report suggested a modified gossip algorithm such that an unhappy subgroup
+has a separate gossip network on top of the collective network for the entire group.
+I believe this should be a byproduct of the existence of an unhappy and should form on its own.
+
+However, the student report correctly identified that in the current simulation, there is no way for such a gossip network to form.
+This is because each gossip update is of the form:
+\[ s_i(k, t+1) = \frac{1}{|\mathcal A_p(t)|}\sum_{j \in \mathcal A_p(t)}s_j(k, t) + (v_i(k, t) - v_i(k, t - 1)) \]
+where $s_i(k, t)$ is $i$'s reputation estimate for $k$ at time $t$, $\mathcal A_p(t)$ is the set of participating actors
+at time $t$ and $v_i(k, t)$ is $i$'s estimate of its personal benefit from $k$ at time $t$.
+
+Now as $t \to \infty$ theoretically we find that
+\[ s_i(k, t) \approx s_j(k, t) \]
+which can be verified empirically for sufficiently large $t$ close to norm convergence. This drives
+the adoption of the current leader's norm and prevents any resistance from forming.
+
+\subsection*{Similarity}
+Another proposed addition from the student report can resolve the gossip mechanism
+by naturally creating the separated gossip networks for the total group and unhappy subgroup.
+This addition is the similarity score, defined for a state $s \in S$ as
+\[ \operatorname{sim}_t(i, j, s) = \begin{cases}
+    \operatorname{sim}_{t - 1}(i, j, s) \cdot (1 - \beta) + \beta \Big(u_i(t, s, \pi_i(s)) - u_j(t, s, \pi_j(s))\Big)^2 & t > 0 \\
+    0 & t = 0
+\end{cases}
+\]
+for a fixed rate constant $\beta \in (0, 1)$
+then
+\[ \operatorname{sim}_t(i, j) = \frac{1}{|S|}\sum_{s \in S}\operatorname{sim}^t(i, j, s) \]
+then there is a fixed constant $C$ such that agents $i$ and $j$ could gossip at time $t$
+only if
+\[ \operatorname{sim}(i, j) < C \]
+and it is clear that unhappy agents would have a low score with each other
+and a high score with other agents and this would naturally fragment the gossip network
+into two subnetworks.
+
+Additionally, a utility matrix is computed at each time step of the simulation, so implementing
+such a similarity score would require minimal tweaking to the current model.
+
+\subsection*{Modelling the Unhappy Agents}
+The report proposes to model a subset of unhappy agents as a subgroup $G_r$ of the total agents $G$
+such that on a subset of the states $S_r \subseteq S$ the dominant schema $\sigma_d$
+is significantly inferior to the potential resistant schema $\sigma_r$, i.e.
+\[ u_i(s, \sigma_r) >> u_i(s, \sigma_d) \quad \forall i \in G_r, \forall s \in S_r \]
+and this is a reasonable gap to drive the formation of a resistant subgroup that fragments from the dominant group.
+
+However, the report did not address how agents in $G_r$ will discover the inbalance in personal utility
+under the dominant schema. This is because in the current simulation, the personal utility estimate of an agent
+is unchanged when the agent is optimizing status or reputation. Additionally, for an agent that is has adopted the dominant
+schema as a follower of the current leader, it only acts under the policy of the leader with out the chance to sample from its own
+personal utility weights where its personal utility estimate could rise above its reputation estimate and it would detach from the group.
+
+To fix these two issues, the personal utility estimate of each agent must be kept current and their personal
+utility weights must not be overriden by the leader weights.
+
+For the agents to actually occassionally witness the schema $\sigma_r$ I propose an extension of the report
+model by adding another rate $\mu_\text{{dev}}$ where $\theta(\mu_{\text{dev}})$ gives the probability
+that a given agent, regardless of whether they optimize personal utility, reputation or status,
+will instead choose to optimize personal utility at that given time step. This deviation mechanism
+will allow unhappy agents to explore other schemas which in turn can faciliate the formation of a resistant subgroup.
+
+\subsection*{Attention Allocation for Participant Rate}
+The student paper proposes a new way to model the interaction $\mu_i$. Namely
+\[ \{ \mu_i(s)\}_{s\in S} = \operatorname{argmax}_{\mu_i} \sum_{s \in S} \theta_\alpha(\mu_{\text{min}(s)} + \mu_i(s))\cdot u_i(s, \pi_i(s)) \]
+subject to the constraints
+\[ \sum_{s \in S}\mu_{\text{min}}(s) + \mu_i(s) \leq M  \quad 0 \leq \mu_s \]
+where the agent i's interaction rate becomes $\mu_{\text{total}} = \mu_{\text{min}} + \mu_i$
+here $M$ is a budget on the total attention an actor $i$ can allocate to different situations and
+under this model it is possible for an agent to selectively focus their attention on states that benefit them.
+
+Additionally $\theta_\alpha$ is a generalization of $\theta$ which is defined as
+\[ \theta_\alpha(\mu) = 1 - \exp(-\alpha\mu) \]
+although up to scaling of $\mu$ and $M$, $\alpha$ is redundant so we take it to be equal to 1.
+
+This optimization problem has a closed form solution from the KKT conditions.
+
+Specifically there emerges a partition of the states $F \sqcup P = S$ called
+the free and pinned states
+where for all $s \in P$
+\[ \mu_i(s)^* = 0 \]
+then for $s \in F$
+\[ \mu_i(s)^* = \frac{M}{|F|} + \Big(\mu_{\text{min}}(s) - \frac{1}{|F|}\sum_{t \in P}\mu_{min}(t)\Big) + \Big(\log u_i(s, \pi_i(s)) - \frac{1}{|F|}\sum_{t \in F}\log u_i(t, \pi_i(t))\Big) \]
+which will be positive.
+
+then for $s \in G_r$ still following the dominant schema $\sigma_d$ if for a moment they deviate
+through $\mu_{\text{dev}}$ and act on personal utility they will update $\mu_i(s)$
+based on $\sigma_r$ and this will drive $\mu_i(s)$ up for $s \in G_r$ and down for $s \in G \setminus G_r$.
+
+The report did not specify where this model for $\mu_i$ would be used in the simulation, but I propose
+that it replaces the current model for $\mu_{i, p}$.
+
+Intuitively a hypothesis would be that as the system progresses and the resistant subgroup
+for a given member $s \in G_r$ its free states will correspond roughly to $S_r$
+and its pinned states to $S \setminus S_r$. And the opposite effect would be present for $G \setminus G_r$.
+This would reinforce a fragmented gossip network when combined with the similarity neighborhood.
+
+In terms of implementation, the report does not give any method for how this interaction rate would
+be updated during simulation. However, I designed a method that mirrors the approach for the current actor interaction
+rate optimization.
+
+For each agent $i$, given some initialization of $\mu_{i, }(s, 0)$ for all $s \in S$ that satisfies
+\[ \sum_{s \in S}\mu_{i, p}(s) + \mu_{\text{min}}(s) \leq M \quad \forall s \in S, \mu_{i, p}(s) \geq 0  \]
+at time $t$ the above optimization problem is solved and $\mu_{i, p}(s, t)^*$ are found for $s \in S$.
+Then there is a fixed rate constant $\eta \in (0, 1)$ such that the rate is updated to
+\[ \mu_{i, p}(s, t+1) = (1 - \eta)\mu_{i, p}(s, t) + \eta \cdot \mu_{i, p}(s, t)^* \]
+and this clearly satisfies the constraints as $\{ \mu_{i, p}(s, t) \}_{s \in S}$ and $\{ \mu_{i, p}(s, t)^* \}_{s \in S}$
+both do.
+
+Now to actually calculate $\mu_i(s)^*$ in practice $F, P$ and have to be computed.
+To do this we sort $S$ as $\{ s_1, \ldots, s_N \}$ in increasing order with respect to $u_i(s_j, \pi_i(s_j))$.
+It is clear that $P$ is of the form $\{ s_j : 0 < j \leq k \}$ for some $k \in \{ 0, \ldots, N + 1 \}$
+Hence we can define
+\[ L_k = \sum_{j \leq k}u_i(s_j, \pi_i(s_j))\mu_{\text{min}}(s_j) + \sum_{j > k}u_i(s_j, \pi_i(s_j))\mu_{i, p}(s_j, t) \]
+then $P = \{ s_j : 0 < j \leq k \}$ for
+\[ k = \operatorname{argmax} \{ L_k : 0 \leq k \leq N + 1 \} \]
+for every agent this has worst case complexity $\mathcal O(|S|\log |S|)$
+and since this is done for each agent, every participant interaction rate update would have worst case complexity
+$\mathcal O(|G||S|\log |S|)$ which is reasonable for moderately sized simulations.
+
+The only implementation issue would be that this attention mechanism requires some significant
+changes to the current code and could easily cause silent failures. Hence the process of migrating
+from a static participant interaction rate to this attention-based one has to be done carefully.
+
+\subsection*{Reward Table Structure}
+The report proposes a reward table structure to model $\sigma_r$ and $\sigma_d$ that is intuitive
+and produces $S_r$ and $G_r$ as discussed above. Namely for states $s \in S \setminus S_r$
+agent rewards can be sampled under one mean and standard deviation. However for $s \in S_r$,
+actions associated to the resistant schema $\sigma_r$ will a reward distribution given by
+\[ u_i(s, \sigma_r) \sim \mathcal N(\mu_r^{G_r}, {\sigma_r^{G_r}}^2) \quad \forall i \in G_r\]
+and
+\[ u_i(s, \sigma_r) \sim \mathcal N(\mu_r^{G}, {\sigma_r^{G}}^2) \quad \forall i \in G \setminus G_r\]
+then for the dominant schema $\sigma d$:
+\[ u_i(s, \sigma_d) \sim \mathcal N(\mu_d^{G_r}, {\sigma_d^{G_r}}^2) \quad \forall i \in G_r \]
+and
+\[ u_i(s, \sigma_d) \sim \mathcal N(\mu_d^{G}, {\sigma_d^{G}}^2) \quad \forall i \in G \setminus G_r\]
+where the marginalized group is created by enforcing
+\[ \mu_r^{G_r} >> \mu_d^{G_r} \]
+this sort of reward table can be built on top of the current reward table structure in the simulation
+without many changes.
+
+\section{What Will Not be Used}
+
+\subsection*{Multiple Gossip Networks}
+The report proposed a manually fragmented gossip network, which I have decided to scrap
+in favour of using the above similarity neighborhoods to produce a fragmented gossip network
+naturally. My approach is aligned with the social reward economies paper which treats
+gossip networks as emergent.
+
+\subsection*{Separate Gammas}
+The model proposes several $\gamma$ values that modulate the weight of an agent $i$'s reputation in $G$ versus $G_r$
+for $i \in G_r$ versus $i \in G \setminus G_r$. This is an artifical addition
+as it indexes $\gamma$ by group membership to create a gap in reputation for different groups.
+However, this difference is precisely what should emerge from the fragmentation of the gossip network mentioned above.
+
+\subsection*{Experiment Setup}
+All of the experiment set up in the report makes sense, any parameters which I have removed above such as the different $\gamma$
+values will be removed. However, one point where there the experiment should have a different setup is at initialization,
+namely the current experiment seeds all agents with the dominant norm except those in the unhappy group $G_r$ which are given $\sigma_r$.
+However this artifically forms the resistant subgroup and only studies whether or not it survives over time. This is a separate question
+from whether or not this subgroup will form on its own. Before the changes to personal utility tracking from above are implemented,
+it would have been impossible for the resistant subgroup to form and seeding the resistant subgroup with the resistant schema
+would have been necessary for any behaviour to emerge. However, my proposed changes to personal utility tracking and follower deviation,
+the subgroup formation can happen naturally.
+
+\subsection*{Parameter Variation in Experiments}
+The report proposes that each of its experiment parameters are varied one at a time for each experiment run,
+this is not optimal as it assumes the effect of each parameter is additive. Instead of this,
+since I have already cut down the number of parameters in the simulation I propose running a grid of different parameter values.
+Even if this does not mean all parameters are in the grid, even a experiment with a grid of 2 or 3 parameters
+will give richer results than an experiment that only varies one.
+
+
+\end{document}
