@@ -1,0 +1,17 @@
+mode,reward_model,num_states,seed,agent_id,final_role,followers,estimated_pu,estimated_rep,estimated_status,actor_rate,true_reputation
+static,shared_base_gaussian,3,0,0,personal_utility,0,nan,nan,nan,nan,2.021513266041241
+static,shared_base_gaussian,3,0,1,personal_utility,0,nan,nan,nan,nan,2.0505542538569563
+static,shared_base_gaussian,3,0,2,personal_utility,0,nan,nan,nan,nan,2.0882625951314036
+static,shared_base_gaussian,3,0,3,personal_utility,0,nan,nan,nan,nan,2.069184142437183
+static,shared_base_gaussian,3,0,4,personal_utility,0,nan,nan,nan,nan,2.0294088391112863
+static,shared_base_gaussian,3,0,5,personal_utility,0,nan,nan,nan,nan,2.0611208489127772
+static,shared_base_gaussian,3,0,6,personal_utility,0,nan,nan,nan,nan,2.0511353387711657
+static,shared_base_gaussian,3,0,7,personal_utility,0,nan,nan,nan,nan,2.0929709937519303
+static,shared_base_gaussian,4,0,0,personal_utility,0,nan,nan,nan,nan,2.2983814363553394
+static,shared_base_gaussian,4,0,1,personal_utility,0,nan,nan,nan,nan,2.3266625638153786
+static,shared_base_gaussian,4,0,2,personal_utility,0,nan,nan,nan,nan,2.3246397598597093
+static,shared_base_gaussian,4,0,3,personal_utility,0,nan,nan,nan,nan,2.319580757676208
+static,shared_base_gaussian,4,0,4,personal_utility,0,nan,nan,nan,nan,2.3297950561051617
+static,shared_base_gaussian,4,0,5,personal_utility,0,nan,nan,nan,nan,2.299092693061332
+static,shared_base_gaussian,4,0,6,personal_utility,0,nan,nan,nan,nan,2.3184955806504557
+static,shared_base_gaussian,4,0,7,personal_utility,0,nan,nan,nan,nan,2.3276044418426514
