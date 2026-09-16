@@ -48,7 +48,10 @@ at time $t$ and $v_i(k, t)$ is $i$'s estimate of its personal benefit from $k$ a
 
 Now as $t \to \infty$ theoretically we find that
 \[ s_i(k, t) \approx s_j(k, t) \]
-which can be verified empirically for sufficiently large $t$ close to norm convergence. This drives
+as the consensus term is identical for all participants and $v_i(k, t)$ plateaus as $t \to \infty$
+which implies $v_i(k, t + 1) - v_i(k, t) \to 0$.
+
+This can be verified empirically for sufficiently large $t$ close to norm convergence. This drives
 the adoption of the current leader's norm and prevents any resistance from forming.
 
 \subsection*{Similarity}
@@ -56,17 +59,19 @@ Another proposed addition from the student report can resolve the gossip mechani
 by naturally creating the separated gossip networks for the total group and unhappy subgroup.
 This addition is the similarity score, defined for a state $s \in S$ as
 \[ \operatorname{sim}_t(i, j, s) = \begin{cases}
-    \operatorname{sim}_{t - 1}(i, j, s) \cdot (1 - \beta) + \beta \Big(u_i(t, s, \pi_i(s)) - u_j(t, s, \pi_j(s))\Big)^2 & t > 0 \\
+    \operatorname{sim}_{t - 1}(i, j, s) \cdot (1 - \beta) + \beta \frac{1}{|K_s(t)|}\sum_{k \in K_s(t)}\Big(u_i(t, s, \pi_k(s)) - u_j(t, s, \pi_k(s))\Big)^2 & t > 0 \\
     0 & t = 0
 \end{cases}
 \]
+where $K_s(t)$ is the set of actors acting in state $s$ at time $t$. if $K_s(t) = \varnothing$, 
+then there is no update.
 for a fixed rate constant $\beta \in (0, 1)$
 then
-\[ \operatorname{sim}_t(i, j) = \frac{1}{|S|}\sum_{s \in S}\operatorname{sim}^t(i, j, s) \]
+\[ \operatorname{sim}_t(i, j) = \frac{1}{|S|}\sum_{s \in S}\operatorname{sim}_t(i, j, s) \]
 then there is a fixed constant $C$ such that agents $i$ and $j$ could gossip at time $t$
 only if
-\[ \operatorname{sim}(i, j) < C \]
-and it is clear that unhappy agents would have a low score with each other
+\[ \operatorname{sim}_t(i, j) < C \]
+and an intuitive hypothesis would be that overtime unhappy agents will have a low score with each other
 and a high score with other agents and this would naturally fragment the gossip network
 into two subnetworks.
 
@@ -95,14 +100,22 @@ that a given agent, regardless of whether they optimize personal utility, reputa
 will instead choose to optimize personal utility at that given time step. This deviation mechanism
 will allow unhappy agents to explore other schemas which in turn can faciliate the formation of a resistant subgroup.
 
+Note that for $\mu_{\text{dev}}$ to have any affect the current model has to be tweaked, as at the moment
+an agent $i$ that optimizes reputation copies its leader's weights and does not keep track of its previous personal utility weights.
+
+Another implementation detail, if two norms emerge in the simulation multiple functions in the model will fail silently
+as they assume a single norm. These include paper\_welfare which takes a single leader\_id and the leader metric
+which takes a global argmax of follower counts. Therefore, migrating the code from a single norm simulation to
+one with two will require a lot of attention to which functionality implicitly assumes a single norm. 
+
 \subsection*{Attention Allocation for Participant Rate}
 The student paper proposes a new way to model the interaction $\mu_i$. Namely
-\[ \{ \mu_i(s)\}_{s\in S} = \operatorname{argmax}_{\mu_i} \sum_{s \in S} \theta_\alpha(\mu_{\text{min}(s)} + \mu_i(s))\cdot u_i(s, \pi_i(s)) \]
+\[ \{ \mu_i(s)\}_{s\in S} = \operatorname{argmax}_{\mu_i} \sum_{s \in S} \theta_\alpha(\mu_{\text{min}} + \mu_i(s))\cdot u_i(s, \pi_i(s)) \]
 subject to the constraints
-\[ \sum_{s \in S}\mu_{\text{min}}(s) + \mu_i(s) \leq M  \quad 0 \leq \mu_s \]
+\[ \sum_{s \in S}(\mu_{\text{min}} + \mu_i(s)) \leq M  \quad 0 \leq \mu_i(s) \]
 where the agent i's interaction rate becomes $\mu_{\text{total}} = \mu_{\text{min}} + \mu_i$
-here $M$ is a budget on the total attention an actor $i$ can allocate to different situations and
-under this model it is possible for an agent to selectively focus their attention on states that benefit them.
+here $M$ is a budget on the total attention an actor $i$ can allocate to different situations and $\mu_{\text{min}} > 0$ to prevent degenerate behaviour.
+Under this model it is possible for an agent to selectively focus their attention on states that benefit them.
 
 Additionally $\theta_\alpha$ is a generalization of $\theta$ which is defined as
 \[ \theta_\alpha(\mu) = 1 - \exp(-\alpha\mu) \]
@@ -115,15 +128,16 @@ the free and pinned states
 where for all $s \in P$
 \[ \mu_i(s)^* = 0 \]
 then for $s \in F$
-\[ \mu_i(s)^* = \frac{M}{|F|} + \Big(\mu_{\text{min}}(s) - \frac{1}{|F|}\sum_{t \in P}\mu_{min}(t)\Big) + \Big(\log u_i(s, \pi_i(s)) - \frac{1}{|F|}\sum_{t \in F}\log u_i(t, \pi_i(t))\Big) \]
+\[ \mu_i(s)^* = \frac{M}{|F|} - \Big(\mu_{\text{min}} + \frac{|P|}{|F|}\mu_{min} \Big) + \Big(\log u_i(s, \pi_i(s)) - \frac{1}{|F|}\sum_{t \in F}\log u_i(t, \pi_i(t))\Big) \]
 which will be positive.
 
 then for $s \in G_r$ still following the dominant schema $\sigma_d$ if for a moment they deviate
 through $\mu_{\text{dev}}$ and act on personal utility they will update $\mu_i(s)$
 based on $\sigma_r$ and this will drive $\mu_i(s)$ up for $s \in G_r$ and down for $s \in G \setminus G_r$.
+Hence this attention mechanism shoud amplify deviation in the subgroup into cohension of the subgroup.
 
 The report did not specify where this model for $\mu_i$ would be used in the simulation, but I propose
-that it replaces the current model for $\mu_{i, p}$.
+that it replaces the current model for $\mu_{i, a}$.
 
 Intuitively a hypothesis would be that as the system progresses and the resistant subgroup
 for a given member $s \in G_r$ its free states will correspond roughly to $S_r$
@@ -134,19 +148,19 @@ In terms of implementation, the report does not give any method for how this int
 be updated during simulation. However, I designed a method that mirrors the approach for the current actor interaction
 rate optimization.
 
-For each agent $i$, given some initialization of $\mu_{i, }(s, 0)$ for all $s \in S$ that satisfies
-\[ \sum_{s \in S}\mu_{i, p}(s) + \mu_{\text{min}}(s) \leq M \quad \forall s \in S, \mu_{i, p}(s) \geq 0  \]
-at time $t$ the above optimization problem is solved and $\mu_{i, p}(s, t)^*$ are found for $s \in S$.
+For each agent $i$, given some initialization of $\mu_{i, a}(s, 0)$ for all $s \in S$ that satisfies
+\[ \sum_{s \in S}(\mu_{i, a}(s) + \mu_{\text{min}}) \leq M \quad \forall s \in S, \mu_{i, a}(s) \geq 0  \]
+at time $t$ the above optimization problem is solved and $\mu_{i, a}(s, t)^*$ are found for $s \in S$.
 Then there is a fixed rate constant $\eta \in (0, 1)$ such that the rate is updated to
-\[ \mu_{i, p}(s, t+1) = (1 - \eta)\mu_{i, p}(s, t) + \eta \cdot \mu_{i, p}(s, t)^* \]
-and this clearly satisfies the constraints as $\{ \mu_{i, p}(s, t) \}_{s \in S}$ and $\{ \mu_{i, p}(s, t)^* \}_{s \in S}$
+\[ \mu_{i, a}(s, t+1) = (1 - \eta)\mu_{i, a}(s, t) + \eta \cdot \mu_{i,a}(s, t)^* \]
+and this clearly satisfies the constraints as $\{ \mu_{i, a}(s, t) \}_{s \in S}$ and $\{ \mu_{i, a}(s, t)^* \}_{s \in S}$
 both do.
 
-Now to actually calculate $\mu_i(s)^*$ in practice $F, P$ and have to be computed.
+Now to actually calculate $\mu_i(s)^*$ in practice $F, P$ have to be computed.
 To do this we sort $S$ as $\{ s_1, \ldots, s_N \}$ in increasing order with respect to $u_i(s_j, \pi_i(s_j))$.
 It is clear that $P$ is of the form $\{ s_j : 0 < j \leq k \}$ for some $k \in \{ 0, \ldots, N + 1 \}$
 Hence we can define
-\[ L_k = \sum_{j \leq k}u_i(s_j, \pi_i(s_j))\mu_{\text{min}}(s_j) + \sum_{j > k}u_i(s_j, \pi_i(s_j))\mu_{i, p}(s_j, t) \]
+\[ L_k = \sum_{j \leq k}u_i(s_j, \pi_i(s_j))\theta(\mu_{\text{min}}) + \sum_{j > k}u_i(s_j, \pi_i(s_j))\theta(\mu_{i, a}(s_j, t) + \mu_{\text{min}}) \]
 then $P = \{ s_j : 0 < j \leq k \}$ for
 \[ k = \operatorname{argmax} \{ L_k : 0 \leq k \leq N + 1 \} \]
 for every agent this has worst case complexity $\mathcal O(|S|\log |S|)$
@@ -155,22 +169,35 @@ $\mathcal O(|G||S|\log |S|)$ which is reasonable for moderately sized simulation
 
 The only implementation issue would be that this attention mechanism requires some significant
 changes to the current code and could easily cause silent failures. Hence the process of migrating
-from a static participant interaction rate to this attention-based one has to be done carefully.
+from the current actor interaction rate to this attention-based one has to be done carefully.
+
+Note, I took $\mu_{\text{min}}$ as uniform across all states to simplify the optimization, although in the report they allow $\mu_{\text{min}}$ to vary across states
+which is a possible extension to the above model.
+
+Additionally this could be extended even further to $\mu_{i, p}$, the only difference that instead
+of weighting each state term by an agents own reward $u_i(s, \pi_i(s))$ it would be better to weight it by
+\[ H_i(s) = \frac{1}{|G|}\sum_{k \in G}u_i(s, \pi_k(s)) \]
+then solve the optimization problem
+\[ \{ \mu_{i, p}(s)\}_{s\in S} = \operatorname{argmax}_{\mu_i} \sum_{s \in S} \theta_\alpha(\mu_{\text{min}} + \mu_{i, p}(s))\cdot H_i(s) \]
+subject to the constraints
+\[ \sum_{s \in S}(\mu_{\text{min}} + \mu_{i, p}(s)) \leq M  \quad 0 \leq \mu_i(s) \]
+and the closed form solution can be found using the same method as the previous problem only replacing $u_i(s, \pi_i(s))$
+with $H_i(s)$.
 
 \subsection*{Reward Table Structure}
 The report proposes a reward table structure to model $\sigma_r$ and $\sigma_d$ that is intuitive
 and produces $S_r$ and $G_r$ as discussed above. Namely for states $s \in S \setminus S_r$
 agent rewards can be sampled under one mean and standard deviation. However for $s \in S_r$,
 actions associated to the resistant schema $\sigma_r$ will a reward distribution given by
-\[ u_i(s, \sigma_r) \sim \mathcal N(\mu_r^{G_r}, {\sigma_r^{G_r}}^2) \quad \forall i \in G_r\]
+\[ u_i(s, \sigma_r) \sim \mathcal N(m_r^{G_r}, {\sigma_r^{G_r}}^2) \quad \forall i \in G_r\]
 and
-\[ u_i(s, \sigma_r) \sim \mathcal N(\mu_r^{G}, {\sigma_r^{G}}^2) \quad \forall i \in G \setminus G_r\]
+\[ u_i(s, \sigma_r) \sim \mathcal N(m_r^{G}, {\sigma_r^{G}}^2) \quad \forall i \in G \setminus G_r\]
 then for the dominant schema $\sigma d$:
-\[ u_i(s, \sigma_d) \sim \mathcal N(\mu_d^{G_r}, {\sigma_d^{G_r}}^2) \quad \forall i \in G_r \]
+\[ u_i(s, \sigma_d) \sim \mathcal N(m_d^{G_r}, {\sigma_d^{G_r}}^2) \quad \forall i \in G_r \]
 and
-\[ u_i(s, \sigma_d) \sim \mathcal N(\mu_d^{G}, {\sigma_d^{G}}^2) \quad \forall i \in G \setminus G_r\]
+\[ u_i(s, \sigma_d) \sim \mathcal N(m_d^{G}, {\sigma_d^{G}}^2) \quad \forall i \in G \setminus G_r\]
 where the marginalized group is created by enforcing
-\[ \mu_r^{G_r} >> \mu_d^{G_r} \]
+\[ m_r^{G_r} >> m_d^{G_r}  \quad m_d^{G} >> m_r^{G} \]
 this sort of reward table can be built on top of the current reward table structure in the simulation
 without many changes.
 
@@ -204,6 +231,22 @@ this is not optimal as it assumes the effect of each parameter is additive. Inst
 since I have already cut down the number of parameters in the simulation I propose running a grid of different parameter values.
 Even if this does not mean all parameters are in the grid, even a experiment with a grid of 2 or 3 parameters
 will give richer results than an experiment that only varies one.
+
+In terms of specific parameters, the fixed parameters the report proposed which will still be present are
+\begin{enumerate}
+    \item[1] N: the number of agents
+    \item[2] S: the set of situations
+    \item[3] M: the total attention budget
+    \item[4] $\gamma$: the reputation scaling factor
+    \item[5] $\kappa$: the status scaling factor
+    \item[6] Normal distribution parameters for reward tables 
+\end{enumerate}
+and the variable parameters are
+\begin{enumerate}
+    \item[1] The distribution of $\mu_{i, a}(s)$.
+    \item[2] The distribution of $\mu_{i, p}(s)$.
+    \item[3] The distribution of $\mu_{\text{min}}(s)$ (if taken to be non-uniform) versus total utility for each situation.
+\end{enumerate}
 
 
 \end{document}
