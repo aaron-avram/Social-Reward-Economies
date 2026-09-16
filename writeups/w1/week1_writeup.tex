@@ -30,15 +30,21 @@
 
 \maketitle
 
+\section{Introduction}
+Overall the student report has some useful ideas which can be added fairly quickly to the current model.
+The report correctly identifies that the gossip mechanism is central to norm formation or subgroup resistance.
+However, they treat it as the source of these behaviours and not as an emergent structure in a system predisposed to
+them. Most of the decisions regarding what to keep or remove from the report follow from this observation.
+
 \section{Additions From the Report}
 \subsection*{Gossip}
-The student report identifies gossip as the central mechanism that connects agents and would drive resistance
+The student report identifies gossip as the central mechanism that connects agents and would drive resistance,
 which is clear from the effect of gossip on the current simulations.
-However, I believe they misclassified its role in the emergence of a resist subgroup.
+However, I believe they misclassified its role in the emergence of a resistant subgroup.
 
-Namely, the student report suggested a modified gossip algorithm such that an unhappy subgroup
+Namely, the student report suggested a modified gossip algorithm such that the unhappy subgroup
 has a separate gossip network on top of the collective network for the entire group.
-I believe this should be a byproduct of the existence of an unhappy and should form on its own.
+I believe this should be a emergent from the difference in reward structure between the two groups and not artificially created.
 
 However, the student report correctly identified that in the current simulation, there is no way for such a gossip network to form.
 This is because each gossip update is of the form:
@@ -87,9 +93,9 @@ and this is a reasonable gap to drive the formation of a resistant subgroup that
 
 However, the report did not address how agents in $G_r$ will discover the inbalance in personal utility
 under the dominant schema. This is because in the current simulation, the personal utility estimate of an agent
-is unchanged when the agent is optimizing status or reputation. Additionally, for an agent that is has adopted the dominant
-schema as a follower of the current leader, it only acts under the policy of the leader with out the chance to sample from its own
-personal utility weights where its personal utility estimate could rise above its reputation estimate and it would detach from the group.
+is unchanged when the agent is optimizing status or reputation. Additionally, for an agent that has adopted the dominant
+schema as a follower of the current leader, it only acts under the policy of the leader without the chance to sample from its own
+personal utility weights which is how its personal utility estimate could rise above its reputation estimate to detach it from the group.
 
 To fix these two issues, the personal utility estimate of each agent must be kept current and their personal
 utility weights must not be overriden by the leader weights.
@@ -139,8 +145,8 @@ Hence this attention mechanism shoud amplify deviation in the subgroup into cohe
 The report did not specify where this model for $\mu_i$ would be used in the simulation, but I propose
 that it replaces the current model for $\mu_{i, a}$.
 
-Intuitively a hypothesis would be that as the system progresses and the resistant subgroup
-for a given member $s \in G_r$ its free states will correspond roughly to $S_r$
+An intuitive hypothesis would be that as the system progresses and the resistant subgroup
+forms, a given member $s \in G_r$ its free states will correspond roughly to $S_r$
 and its pinned states to $S \setminus S_r$. And the opposite effect would be present for $G \setminus G_r$.
 This would reinforce a fragmented gossip network when combined with the similarity neighborhood.
 
@@ -151,10 +157,16 @@ rate optimization.
 For each agent $i$, given some initialization of $\mu_{i, a}(s, 0)$ for all $s \in S$ that satisfies
 \[ \sum_{s \in S}(\mu_{i, a}(s) + \mu_{\text{min}}) \leq M \quad \forall s \in S, \mu_{i, a}(s) \geq 0  \]
 at time $t$ the above optimization problem is solved and $\mu_{i, a}(s, t)^*$ are found for $s \in S$.
-Then there is a fixed rate constant $\eta \in (0, 1)$ such that the rate is updated to
-\[ \mu_{i, a}(s, t+1) = (1 - \eta)\mu_{i, a}(s, t) + \eta \cdot \mu_{i,a}(s, t)^* \]
+Then there is a fixed rate constant $\eta(t) \in (0, 1)$ such that the rate is updated to
+\[ \mu_{i, a}(s, t+1) = (1 - \eta(t))\mu_{i, a}(s, t) + \eta(t) \cdot \mu_{i,a}(s, t)^* \]
 and this clearly satisfies the constraints as $\{ \mu_{i, a}(s, t) \}_{s \in S}$ and $\{ \mu_{i, a}(s, t)^* \}_{s \in S}$
 both do.
+
+$\eta(t)$ should satisfy the same constraints as the rate variables in the learning norms paper. Namely
+\begin{align*}
+    &\sum_{n = 0}^\infty \eta(t)^2 < \infty \\
+    &\sum_{n = 0}^\infty \eta(t) = \infty
+\end{align*}
 
 Now to actually calculate $\mu_i(s)^*$ in practice $F, P$ have to be computed.
 To do this we sort $S$ as $\{ s_1, \ldots, s_N \}$ in increasing order with respect to $u_i(s_j, \pi_i(s_j))$.
@@ -171,10 +183,10 @@ The only implementation issue would be that this attention mechanism requires so
 changes to the current code and could easily cause silent failures. Hence the process of migrating
 from the current actor interaction rate to this attention-based one has to be done carefully.
 
-Note, I took $\mu_{\text{min}}$ as uniform across all states to simplify the optimization, although in the report they allow $\mu_{\text{min}}$ to vary across states
-which is a possible extension to the above model.
+Note that I took $\mu_{\text{min}}$ as uniform across all states to simplify the optimization, although in the report they allow $\mu_{\text{min}}$ to vary across states
+which is a future extension to the above model.
 
-Additionally this could be extended even further to $\mu_{i, p}$, the only difference that instead
+Additionally this could be extended even further to $\mu_{i, p}$, the only difference is that instead
 of weighting each state term by an agents own reward $u_i(s, \pi_i(s))$ it would be better to weight it by
 \[ H_i(s) = \frac{1}{|G|}\sum_{k \in G}u_i(s, \pi_k(s)) \]
 then solve the optimization problem
@@ -222,13 +234,13 @@ namely the current experiment seeds all agents with the dominant norm except tho
 However this artifically forms the resistant subgroup and only studies whether or not it survives over time. This is a separate question
 from whether or not this subgroup will form on its own. Before the changes to personal utility tracking from above are implemented,
 it would have been impossible for the resistant subgroup to form and seeding the resistant subgroup with the resistant schema
-would have been necessary for any behaviour to emerge. However, my proposed changes to personal utility tracking and follower deviation,
+would have been necessary for any behaviour to emerge. However, with my proposed changes to personal utility tracking and follower deviation,
 the subgroup formation can happen naturally.
 
 \subsection*{Parameter Variation in Experiments}
 The report proposes that each of its experiment parameters are varied one at a time for each experiment run,
-this is not optimal as it assumes the effect of each parameter is additive. Instead of this,
-since I have already cut down the number of parameters in the simulation I propose running a grid of different parameter values.
+this is not optimal as it assumes the effect of each parameter is additive.
+Since I have already cut down the number of parameters in the simulation I propose instead to run a grid of different parameter values.
 Even if this does not mean all parameters are in the grid, even a experiment with a grid of 2 or 3 parameters
 will give richer results than an experiment that only varies one.
 
@@ -247,6 +259,10 @@ and the variable parameters are
     \item[2] The distribution of $\mu_{i, p}(s)$.
     \item[3] The distribution of $\mu_{\text{min}}(s)$ (if taken to be non-uniform) versus total utility for each situation.
 \end{enumerate}
-
+Additionally some parameters not mentioned in the report that would be added are
+\begin{enumerate}
+    \item[1] C: the similarity score threshold to enable gossip.
+    \item[2] $\mu_{\text{dev}}$: the rate modulating the chance of follower deviation. 
+\end{enumerate}
 
 \end{document}
