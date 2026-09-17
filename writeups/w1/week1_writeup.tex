@@ -36,8 +36,84 @@ The report correctly identifies that the gossip mechanism is central to norm for
 However, they treat it as the source of these behaviours and not as an emergent structure in a system predisposed to
 them. Most of the decisions regarding what to keep or remove from the report follow from this observation.
 
+\section{Theoretical Grounding: Resistance as an Alternative Social Reward Economy}
+
+\subsection{What We Want to Model}
+In the paper \textit{Social Reward Economies}, resistance is not modelled as a product
+of generic deviance or systemic disruptions. Instead, it is viewed as the emergence of an alternate reward economy.
+Specifically, when a subset $G_r \subseteq G$ of the set of total actors views the dominant schema $\sigma_d$ as detrimental relative to an alternative $\sigma_r$,
+its members can form an alternative economy that rewards behaviours aligned with $\sigma_r$ instead of $\sigma_d$.
+Concretely, we will view this as a gap in rewards on a subset $S_r$ of the total set of states $S_r$ where $\sigma_r$ generates significantly better rewards
+for $G_r$ then $\sigma_d$. Resistance
+is therefore not a property of individual agents but of a newly formed competing reward structure.
+The goal of our simulation is to reproduce this formation process from end-to-end and its three possible outcomes.
+These are described in the paper as (Eqs. (1)-(2) in section 6.2.2):
+\begin{enumerate}
+    \item[1.] $G_r$'s weighted feedback dominates $G \setminus G_r$'s for both schema which implies the alternative schema overturns
+    the old norm (this is successful resistance / norm change, exemplified by \#MeToo in Section 6.2).
+    \item[2.] The two economies' weighted feedback is comparable, this causes polarization: the economies coexist and
+    compete without either dominating (Section 7.2.).
+    \item[3.] $G \setminus G_r$'s feedback dominates implies $G_r$ fails to change the norm and remains a marginalized subgroup
+    (Section 6.2.2, end).
+\end{enumerate}
+These are the target phenomena and are qualitatively different from the current simulation
+which produces a single opinion leader and a single converged norm (the "cohesive social reward economy"
+case of Section 7.1) with no mechanism by which a second, self-sustaining economy could ever appear. 
+
+\subsection{Key Ideas We Want to Test}
+To approach implementing the above phenomena, we need to condense Section 6 into implementable mechanisms.
+Three of the key ideas that matter most are:
+\begin{itemize}
+    \item \textbf{Misalignment must be discovered, not assumed.} Resistance begins when agents in $G_r$
+    notice that $u_i(s, \sigma_r) \gg u_i(s, \sigma_d)$ for $s \in S_r$ which is the interpretation of Section 6.1 in the above setup.
+    This is a claim about what agents can observe, not an intrinsic property of the system hence the simulation needs a channel
+    through which an agent can sample its own payoff under $\sigma_r$ before it can defect from $\sigma_d$.
+    \item \textbf{Feedback and reputation are group-relative, not global.} The paper's notation in Section 6.2.1
+    gives $G_r$ its own feedback function $f^r_i$ and its own influence weights $w_j^r$, explicitly distinct
+    from the $f_j$ and the wider group $G$. Therefore an agent's standing in $G$ is different from its standing in $G_r$,
+    and these two values could diverge once $G_r$ is formed as a subgroup in the system.
+    \item \textbf{How do the size of $G_r$ and feedback drive resistance.} Section 6.2.3
+    makes this explicit: $|G_r|$ trades off against how strong and low-variance $G_r$'s internal feedback
+    is relative to the noise from the rest of $G$. This gives us a concrete empirical target:
+    measure equations (1) and (2) in Section 6.2.2 across variations of the subgroup size and the reward-gap
+    magnitude and observe whether qualitative regimes actually emerge in the simulation.
+\end{itemize}
+
+\subsection{What This Means for the Implementation}
+The current engine converges every agent's reputation estimate to a single shared value as $t \to \infty$
+(this is discussed in Section 3.1 below). This is a valid implementation of a cohesive social reward economy,
+but it does not allow for the possibility of resistance as modelled above. This is because
+the current simulation has no mechanism by which alternative feedback signal, alternative reputational weighting or an alternative
+schema exist simultaneously with a dominant norm.
+
+To augment the current code to test the ideas in Section 2.2 above requires four major changes
+\begin{enumerate}
+    \item[1.] \textbf{Persistent personal-utility tracking.} Currently, an agent only acts under its leader's policy,
+    and it overwrites its personal-utility estimates whenever it optimizes reputation or status. Thus an agent in $G_r$
+    following the dominant norm can never discover the gap $u_i(s, \sigma_r) \gg u_i(s, \sigma_d)$ which is precisely
+    what the paper identifies as the trigger for resistance. This is the most important part of the simulation to change.
+    \item[2.] \textbf{Sampling $\sigma_r$.} If an agent simply imitates its current leader,
+    they will never encounter an alternative schema in the first placed so misalignment can be tracked
+    but never observed. Thus, followers must have some non-zero probability of deviating from the leader's policy.
+    \item[3.] \textbf{Group-relative feedback and reputation.} The quantities $f^r_i$ vs. $f_j$ and $w^r_j$ vs. $w$
+    described in Section 6.2.1 are not the same object computed twice, they are different quantities that a subgroup
+    computes for itself. Therefore, the implementation needs a mechanism by which a subgroup's internal reputational
+    structure can diverge from the group's. Moreover, Section 4.1 describes gossip networks and opinion leaders
+    as \textit{emergent structural properties} of the reward economy rather than externally imposed ones. Hence the divergence
+    in the gossip network should arise from the dynamics of the simulation, not be hard coded as two separate networks
+    or two separate parameter sets.
+    \item[4.] \textbf{A reward structure encoding misalignment.} The paper's setup gives four
+    distinct payoff distributions $(\sigma_r/\sigma_d \times G_r / G \setminus G_r)$, the current reward models
+    have no way of representing this and need to be extended.
+\end{enumerate}
+
+These four requirements guide the decisions of the rest of this document. Every addition
+kept from the report either directly implements one of them or supports the implementation and every rejection is
+a case where the report's proposal would satisfy one of the above requirements through an artifically injected structure
+rather than an emergent one like the paper actually describes.
+
 \section{Additions From the Report}
-\subsection*{Gossip}
+\subsection{Gossip}
 The student report identifies gossip as the central mechanism that connects agents and would drive resistance,
 which is clear from the effect of gossip on the current simulations.
 However, I believe they misclassified its role in the emergence of a resistant subgroup.
@@ -45,6 +121,11 @@ However, I believe they misclassified its role in the emergence of a resistant s
 Namely, the student report suggested a modified gossip algorithm such that the unhappy subgroup
 has a separate gossip network on top of the collective network for the entire group.
 I believe this should be a emergent from the difference in reward structure between the two groups and not artificially created.
+
+This is precisely the third requirement from Section 2.3: the paper treats gossip networks and opinion leaders
+as emergent from the underlying feedback dynamics described in Section 4.1 of the paper,
+not as infrastructure hardwired by the modeller. A manually split network would let two economies
+coexist by construction, which tells us nothing about whether the resistance mechanism actually produces a split on its own.
 
 However, the student report correctly identified that in the current simulation, there is no way for such a gossip network to form.
 This is because each gossip update is of the form:
@@ -59,8 +140,9 @@ which implies $v_i(k, t + 1) - v_i(k, t) \to 0$.
 
 This can be verified empirically for sufficiently large $t$ close to norm convergence. This drives
 the adoption of the current leader's norm and prevents any resistance from forming.
+This exemplifies the claim made in Section 2.3 that the current update rule can only produce a single cohesive reward economy.
 
-\subsection*{Similarity}
+\subsection{Similarity}
 Another proposed addition from the student report can resolve the gossip mechanism
 by naturally creating the separated gossip networks for the total group and unhappy subgroup.
 This addition is the similarity score, defined for a state $s \in S$ as
@@ -81,21 +163,32 @@ and an intuitive hypothesis would be that overtime unhappy agents will have a lo
 and a high score with other agents and this would naturally fragment the gossip network
 into two subnetworks.
 
+This is exactly what is needed in requirement (3) in Section 2.3. The emergence of a $G_r$-specific gossip network
+and $G_r$-specific weights $w^r_j$ is now a testable outcome of the dynamics rather than
+a hard-coded property of the network structure. I think this is the one piece of the report closest to the paper's
+own account of how alternative reputation structures form.
+
 Additionally, a utility matrix is computed at each time step of the simulation, so implementing
 such a similarity score would require minimal tweaking to the current model.
 
-\subsection*{Modelling the Unhappy Agents}
+\subsection{Modelling the Unhappy Agents}
 The report proposes to model a subset of unhappy agents as a subgroup $G_r$ of the total agents $G$
 such that on a subset of the states $S_r \subseteq S$ the dominant schema $\sigma_d$
 is significantly inferior to the potential resistant schema $\sigma_r$, i.e.
 \[ u_i(s, \sigma_r) >> u_i(s, \sigma_d) \quad \forall i \in G_r, \forall s \in S_r \]
 and this is a reasonable gap to drive the formation of a resistant subgroup that fragments from the dominant group.
 
+This is a direct implementation of the misalignment condiiton in Section 6.1 of the paper, as this
+quantity has to exist before resistance can even be discovered.
+
 However, the report did not address how agents in $G_r$ will discover the inbalance in personal utility
 under the dominant schema. This is because in the current simulation, the personal utility estimate of an agent
 is unchanged when the agent is optimizing status or reputation. Additionally, for an agent that has adopted the dominant
 schema as a follower of the current leader, it only acts under the policy of the leader without the chance to sample from its own
 personal utility weights which is how its personal utility estimate could rise above its reputation estimate to detach it from the group.
+
+This is requirement (1) from Section 2.3, without it the above gap can exist mathematically in the reward table
+but never be visible to the agent and hence can never produce any observable behaviour in the system.
 
 To fix these two issues, the personal utility estimate of each agent must be kept current and their personal
 utility weights must not be overriden by the leader weights.
@@ -106,6 +199,8 @@ that a given agent, regardless of whether they optimize personal utility, reputa
 will instead choose to optimize personal utility at that given time step. This deviation mechanism
 will allow unhappy agents to explore other schemas which in turn can faciliate the formation of a resistant subgroup.
 
+This is requirement (2) from Section 2.3, the discovery channel needed for observing of the alternative schema.
+
 Note that for $\mu_{\text{dev}}$ to have any affect the current model has to be tweaked, as at the moment
 an agent $i$ that optimizes reputation copies its leader's weights and does not keep track of its previous personal utility weights.
 
@@ -114,7 +209,7 @@ as they assume a single norm. These include paper\_welfare which takes a single 
 which takes a global argmax of follower counts. Therefore, migrating the code from a single norm simulation to
 one with two will require a lot of attention to which functionality implicitly assumes a single norm. 
 
-\subsection*{Attention Allocation for Participant Rate}
+\subsection{Attention Allocation for Participant Rate}
 The student paper proposes a new way to model the interaction $\mu_i$. Namely
 \[ \{ \mu_i(s)\}_{s\in S} = \operatorname{argmax}_{\mu_i} \sum_{s \in S} \theta_\alpha(\mu_{\text{min}} + \mu_i(s))\cdot u_i(s, \pi_i(s)) \]
 subject to the constraints
@@ -141,6 +236,11 @@ then for $s \in G_r$ still following the dominant schema $\sigma_d$ if for a mom
 through $\mu_{\text{dev}}$ and act on personal utility they will update $\mu_i(s)$
 based on $\sigma_r$ and this will drive $\mu_i(s)$ up for $s \in G_r$ and down for $s \in G \setminus G_r$.
 Hence this attention mechanism shoud amplify deviation in the subgroup into cohension of the subgroup.
+
+I kept this part of the report, because it implements the second half of the paper's success condition in Section 6.2.3:
+resistance is not just about the existence of a utility gap, but about $G_r$'s feedback becoming disproportionately strong and coherent.
+An attention mechanism that lets deviating agents concentrate their interaction budget on $S_r$ is a natural way to generate this disproportionate feedback
+without injecting it artifically in the system.
 
 The report did not specify where this model for $\mu_i$ would be used in the simulation, but I propose
 that it replaces the current model for $\mu_{i, a}$.
@@ -196,7 +296,7 @@ subject to the constraints
 and the closed form solution can be found using the same method as the previous problem only replacing $u_i(s, \pi_i(s))$
 with $H_i(s)$.
 
-\subsection*{Reward Table Structure}
+\subsection{Reward Table Structure}
 The report proposes a reward table structure to model $\sigma_r$ and $\sigma_d$ that is intuitive
 and produces $S_r$ and $G_r$ as discussed above. Namely for states $s \in S \setminus S_r$
 agent rewards can be sampled under one mean and standard deviation. However for $s \in S_r$,
@@ -213,21 +313,32 @@ where the marginalized group is created by enforcing
 this sort of reward table can be built on top of the current reward table structure in the simulation
 without many changes.
 
+I kept this section essentially as proposed because it is a direct, minimal implementation of requirement (4)
+from Section 2.3 and the natural discretization of the reward model described in Section 6.2.1 of the paper.
+
 \section{What Will Not be Used}
 
-\subsection*{Multiple Gossip Networks}
+\subsection{Multiple Gossip Networks}
 The report proposed a manually fragmented gossip network, which I have decided to scrap
 in favour of using the above similarity neighborhoods to produce a fragmented gossip network
 naturally. My approach is aligned with the social reward economies paper which treats
-gossip networks as emergent.
+gossip networks as emergent (Section 4.1: gossip networks "can both stabilize and destabilize power structures"
+as a consequence of ongoing reputational dynamics, not as a fixed architecture). Additionally, Section 7.2.1
+of the paper describes polarized subgroups as "structurally insulated social systems" that become insulated
+by their own internal feedback amplification. Hence, insulation should be an outcome of the dynamics in the paper,
+not an input to them.
 
-\subsection*{Separate Gammas}
+\subsection{Separate Gammas}
 The model proposes several $\gamma$ values that modulate the weight of an agent $i$'s reputation in $G$ versus $G_r$
 for $i \in G_r$ versus $i \in G \setminus G_r$. This is an artifical addition
 as it indexes $\gamma$ by group membership to create a gap in reputation for different groups.
 However, this difference is precisely what should emerge from the fragmentation of the gossip network mentioned above.
+The paper is explicit that this gap is earned not assigned. Section 6.2.1 states: agents in $G_r$ "who strongly support the schema $\sigma_r$
+and strongly comend $\sigma_d$ gain reputation within the subgroup, thereby acquiring higher influence weights $w_j^r$."
+Hence $w_j^r$ is itself an output of the within-subgroup feedback process, not a parameter.
+Selecting separate $\gamma$'s per group would bake in the very asymmetry the model is supposed to explain.
 
-\subsection*{Experiment Setup}
+\subsection{Experiment Setup}
 All of the experiment set up in the report makes sense, any parameters which I have removed above such as the different $\gamma$
 values will be removed. However, one point where there the experiment should have a different setup is at initialization,
 namely the current experiment seeds all agents with the dominant norm except those in the unhappy group $G_r$ which are given $\sigma_r$.
@@ -235,14 +346,24 @@ However this artifically forms the resistant subgroup and only studies whether o
 from whether or not this subgroup will form on its own. Before the changes to personal utility tracking from above are implemented,
 it would have been impossible for the resistant subgroup to form and seeding the resistant subgroup with the resistant schema
 would have been necessary for any behaviour to emerge. However, with my proposed changes to personal utility tracking and follower deviation,
-the subgroup formation can happen naturally.
+the subgroup formation can happen naturally. This distinction matters to accurately test the claims of the paper. Section $6.1$
+defines resistance as something that emerges once misalignment is discovered. Seeding $G_r$ with $\sigma_r$
+from $t = 0$ answers a survival question (does an existing alternative economy persist against the dominant one)
+rather than the formation question the report and section $6.1$ of the paper are discussing.
+With requirements (1) and (2) from section 2.3 in place, seeding is no longer necessary and the initialization
+should instead start with every agent under $\sigma_d$, letting $G_r$ (if it forms at all) be an outcome
+we measure rather than a condition we impose.
 
-\subsection*{Parameter Variation in Experiments}
+\subsection{Parameter Variation in Experiments}
 The report proposes that each of its experiment parameters are varied one at a time for each experiment run,
 this is not optimal as it assumes the effect of each parameter is additive.
 Since I have already cut down the number of parameters in the simulation I propose instead to run a grid of different parameter values.
 Even if this does not mean all parameters are in the grid, even a experiment with a grid of 2 or 3 parameters
-will give richer results than an experiment that only varies one.
+will give richer results than an experiment that only varies one. This also follows from Section 2.2's third point:
+Section 6.2.3 frames resistance as a joint function of subgroup size $|G_r|$ and feedback, not either individually.
+Thus, single parameter sweeps cannot actually test the paper's success condition. Only a joint grid
+over size, reward-gap (and now, the deviation rate and similarity threshold) can show whether the two factors trade off against
+each other in the way the paper predicts.
 
 In terms of specific parameters, the fixed parameters the report proposed which will still be present are
 \begin{enumerate}

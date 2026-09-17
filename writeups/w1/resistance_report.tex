@@ -1,0 +1,265 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{array}
+
+\title{Norm Emergence Report: Resistance}
+\author{Aaron Avram}
+\date{September 16th 2026}
+
+\begin{document}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{claim}[theorem]{Claim}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{note}[theorem]{Note}
+
+\maketitle
+
+\section{Introduction}
+This report assesses the previous students' \textit{Report Revision} against the resistance
+model of the \textit{Social Reward Economies} and estimates the work needed to adapt the
+current norm emergence code to it. Section 2 states the four implementation requirements
+the paper imposes, since every verdict below follows from one of them. Sections 3-5 sort the report's
+proposals into parts usable as they are, parts that need refinement, and parts that need to be redone.
+Section 6 gives an effort estimate and a sequencing recommendation.
+
+One note on scope: the report proposes an attention allocation mechanism but supplies
+only the objective function, with no closed form, no update rule and no statement about what it replaces.
+I have worked those out, but have not included any of my derivations which I can supply if necessary: Section 4.4 only contains the verdict.
+
+The general assessment of the report: the statement gossip is a mechanism connecting agents and the key to resistance,
+is right. Its recurring error is treating gossip fragmentation, reputational asymmetry and subgroup membership
+as structures to be imposed, when the paper treats all three as emergent. Most of the decisions below follow from this observation.
+
+\section{What the Paper Requires of the Implementation}
+In the paper \textit{Social Reward Economies}, resistance is not modelled as a product
+of generic deviance or systemic disruptions. Instead, it is viewed as the emergence of an alternate reward economy.
+Specifically, when a subset $G_r \subseteq G$ of the set of total actors views the dominant schema $\sigma_d$ as detrimental relative to an alternative $\sigma_r$,
+its members can form an alternative economy that rewards behaviours aligned with $\sigma_r$ instead of $\sigma_d$.
+Concretely, we will view this as a gap in rewards on a subset $S_r$ of the total set of states $S$ where $\sigma_r$ generates significantly better rewards
+for $G_r$ than $\sigma_d$. Resistance
+is therefore not a property of individual agents but of a newly formed competing reward structure.
+The goal of our simulation is to reproduce this formation process from end-to-end and its three possible outcomes.
+These are described in the paper as (Eqs. (1)-(2) in section 6.2.2):
+\begin{enumerate}
+    \item[1.] $G_r$'s weighted feedback dominates $G \setminus G_r$'s for both schema which implies the alternative schema overturns
+    the old norm (this is successful resistance / norm change, exemplified by \#MeToo in Section 6.2).
+    \item[2.] The two economies' weighted feedback is comparable, this causes polarization: the economies coexist and
+    compete without either dominating (Section 7.2.).
+    \item[3.] $G \setminus G_r$'s feedback dominates implies $G_r$ fails to change the norm and remains a marginalized subgroup
+    (Section 6.2.2, end).
+\end{enumerate}
+The current engine cannot produce any of the above scenarios.
+
+This is because each gossip update is of the form:
+\[ s_i(k, t+1) = \frac{1}{|\mathcal A_p(t)|}\sum_{j \in \mathcal A_p(t)}s_j(k, t) + (v_i(k, t) - v_i(k, t - 1)) \]
+where $s_i(k, t)$ is $i$'s reputation estimate for $k$ at time $t$, $\mathcal A_p(t)$ is the set of participating actors
+at time $t$ and $v_i(k, t)$ is $i$'s estimate of its personal benefit from $k$ at time $t$.
+
+Now as $t \to \infty$ theoretically we find that
+\[ s_i(k, t) \approx s_j(k, t) \]
+as the consensus term is identical for all participants and $v_i(k, t)$ plateaus as $t \to \infty$
+which implies $v_i(k, t + 1) - v_i(k, t) \to 0$.
+
+The above formula can be verified empirically for sufficiently large $t$ close to norm convergence and it drives
+the adoption of the current leader's norm and prevents any resistance from forming.
+
+To augment the current code to test the three outcomes above requires four major changes:
+\begin{enumerate}
+    \item[1.] \textbf{Persistent personal-utility tracking.} Currently, an agent only acts under its leader's policy,
+    and it overwrites its personal-utility estimates whenever it optimizes reputation or status. Thus an agent in $G_r$
+    following the dominant norm can never discover the gap $u_i(s, \sigma_r) \gg u_i(s, \sigma_d)$ which is precisely
+    what the paper identifies as the trigger for resistance. This is the most important part of the simulation to change.
+    \item[2.] \textbf{Sampling $\sigma_r$.} If an agent simply imitates its current leader,
+    they will never encounter an alternative schema in the first place so misalignment can be tracked
+    but never observed. Thus, followers must have some non-zero probability of deviating from the leader's policy.
+    \item[3.] \textbf{Group-relative feedback and reputation.} The quantities $f^r_i$ vs. $f_j$ and $w^r_j$ vs. $w_j$
+    described in Section 6.2.1 of the paper are not the same object computed twice, they are different quantities that a subgroup
+    computes for itself. Therefore, the implementation needs a mechanism by which a subgroup's internal reputational
+    structure can diverge from the group's. Moreover, Section 4.1 of the paper describes gossip networks and opinion leaders
+    as emergent structural properties of the reward economy rather than externally imposed ones. Hence the divergence
+    in the gossip network should arise from the dynamics of the simulation, not be hard coded as two separate networks
+    or two separate parameter sets.
+    \item[4.] \textbf{A reward structure encoding misalignment.} The paper's setup gives four
+    distinct payoff distributions $(\sigma_r/\sigma_d \times G_r / G \setminus G_r)$, the current reward model
+    has no way of representing this and need to be extended.
+\end{enumerate}
+
+\section{Usable As They Are}
+\begin{itemize}
+    \item \textbf{The reward table structure} (Section 5.1 Table 1 in the report). Sampling $u_i(s, \sigma)$
+    from group-conditioned normals on $s \in S_r$ with $\text{mean}_r^{G_r} \gg \text{mean}_d^{G_r}$ and $\text{mean}_d^G \gg \text{mean}_r^G$
+    is a direct and minimal implementation of the fourth requirement that layers onto the existing reward table construction. This is the only piece
+    that needs absolutely no modification.
+    \item \textbf{The misalignment condition itself} (Section 3.3 in the report). Defining $G_r$ and $S_r$
+    by $u_i(s, \sigma_r) \gg u_i(s, \sigma_d)$ is the right implementation of Section 6.1 of the paper. What needs some reworking
+    is the discovery mechanism built on top of it.
+    \item \textbf{Diagnostics and hypotheses 1-4} (Section 5.1 in the Report). Subgroup size over time, per-agent and per-group reward totals,
+    and the predictions about $|S_r|$, $|G_{\text{unhappy}}|$, the utility gap and within-group variance all
+    factor into the size-versus-intensity tradeoff of Section 6.2.3 of the paper and can be carried over directly. The parameters
+    they range over need revision (These are addressed in Sections 4.5, 5.4 below).
+\end{itemize}
+
+\section{Sensible But Needing Refinement}
+
+\subsection{Similarity-gated gossip}
+The report's similarity distance, thresholded at a constant $C$ to decide whether two agents may gossip,
+is the piece closest to the paper's own account of how alternative reputational structures form: it makes
+the emergence of a $G_r$-specific network and $G_r$-specific weights a testable outcome
+rather than a premise, which is the third requirement.
+
+The utility matrix is already computed at each timestep, so implementation only requires accumulating these signals over time
+and a threshold check in the gossip algorithm.
+
+Two changes are needed. The report defines the distance over $u_i(s, \sigma_r)$ for pairs already known to be in $G_r$
+which is circular (discussed in Section 5.2 below). It should instead be computed over whatever actions were actually observed,
+which is well defined before any subgroup exists. And the averaging set, which the report leaves ambiguous,
+should be all of S, since $S_r$ is not known in advance.
+
+With this definition the mechanism begins fragmenting the network before anyone deviates, because distances
+are computed on utilities derived under $\sigma_d$ and members of $G_r$ already score poorly there. So similarity
+and the deviation rate defined below are complementary: similarity separates the network and deviation supplies the actual sample of $\sigma_r$
+to members of $G_r$.
+
+\subsection{Discovery of misalignment}
+The report does give a defection trigger (Section 3.5 Step 1): agent $i$ optimizes utility in $s$
+when
+\[ u_i^t(s, \sigma_i) - u_i^t(s, \sigma) > R^{G, t}_i(s, \sigma) - R_i^{G, t}(s, \sigma_i) \]
+this presupposes that $i$ already holds an estimate of $u_i(s, \sigma_r)$. It specifies when to defect given the estimate,
+never how the estimate is acquired by an agent optimizing reputation and the current code does not supply a solution.
+
+The fix has two parts. Personal utility estimates must be kept current and must not be overridden by leader weights.
+And I propose a deviation rate $\mu_{\text{dev}}$, where $\theta(\mu_{\text{dev}})$ is the probability that
+an agent optimizes personal utility at a given timestep regardless of its assigned role.
+
+At the moment $\mu_{\text{dev}}$ is fixed, but if it is implemented then a possible extension is to optimize this rate as well.
+
+\subsection{The Dual reputation structure}
+The $2\times 2$ reputation matrix of Section 3.2 in the report has the right underlying structure and should be kept as it is essentially
+the third requirement, and corresponds to the paper's $w_j$ versus $w^r_j$. Members of $G_r$ maintain two estimates, one
+aggregated over $G_r$ and $S_r$ and one over $G$ and $S$; members of $G \setminus G_r$ maintain only the
+latter. What should be removed is the four $\gamma$ factors indexing it (Section 5.1 of the report).
+ 
+Once the four $\gamma$'s are removed the report's four-case learning derivation in section 3.4 is largely redundant. Cases 3.4.3 and 3.4.4
+are the existing update summed over $G$; case 3.4.1 is the same update summed over $G_r$ and $S_r$. One
+update parameterized by its index sets is less code and closer to the paper, which treats the subgroup
+economy as the same mechanism over a different population. Case 3.4.2 is separate and discussed in Section 5.3 below.
+
+\subsection{Attention allocation}
+The report proposed a model for the rates $\mu_i(s)$ where each agent maximizes $\sum_{s} \theta(\mu_\text{min} + \mu_i(s)) u_i(s,\pi_i(s))$ subject
+to a total budget $M$. This is worth keeping, because it implements the second half of Section 6.2.3's success
+condition in the paper. Namely, that resistance requires a disproportionately strong and coherent feedback from
+$G_r$ on top of a utility gap. If deviating agents are allowed to concentrate their budget on $S_r$,  the feedback loop will emerge from the dynamics of the simulation.
+ 
+I have derived a closed form for the optimum and a $\mathcal O(|G||S|\log|S|)$ method for computing it, together with an averaged update rule
+satisfying the usual stepsize conditions, and I propose that this replaces the current $\mu_{i,a}$ with the
+same treatment available for $\mu_{i,p}$.
+
+It is important to note that I solved the uniform-$\mu_\text{min}$ case
+first for tractability, but section 4.2.2 of the report assumes $\mu_\text{min}(s) \approx 0$ on $S_r$ and larger
+elsewhere, and that asymmetry is what drives its predicted split. Uniform $\mu_\text{min}$ weakens the
+concentration effect, so a situation-dependent version can be added after the uniform case is implemented.
+
+\subsection{Simulation design}
+Varying one parameter per run assumes additive effects. Section 6.2.3 of the paper describes resistance as a joint function
+of $|G_r|$ and feedback intensity, so simulations only varying a single-parameter cannot test the paper's success condition at
+all. A grid over even two or three parameters such as  $|G_r|$, the reward gap $m_r^{G_r} - m_d^{G_r}$, and now
+$\mu_\text{dev}$ and the similarity threshold $C$, is more informative than any number of one-dimensional
+runs.
+ 
+\subsection{The concurrent-situations experiment}
+Section 5.2 of the report suggests varying $\mu_\text{min}(s)$ to test institutional participation floors which is worth keeping and
+should run before even testing resistance as it validates the attention mechanism in the single-economy
+setting we already understand. Additionally, debugging the optimizer and two-economy dynamics simultaneously could cause
+silent failure. Additionally, the report's hypotheses about the effect of the rate on resistance should be restated in terms of the optimization of the rate proposed in Section 4.4 above.
+
+\section{Needing to Be Redone}
+ 
+\subsection{Manually fragmented networks and separate $\gamma$'s}
+The report has agents in $G_r$ participate in two gossip networks and agents in $G\setminus G_r$ in one,
+with membership determining connectivity. But membership is what the simulation is supposed to produce, so
+connectivity cannot be dependent on it. Section 4.1 of the paper describes gossip networks as capable of
+both reinforcing and destabilizing power structures through ongoing reputational dynamics, and Section 7.2.1
+describes polarized subgroups as becoming insulated through their own feedback amplification. Therefore insulation
+is an outcome, not an input. The similarity threshold of Section 4.1 above replaces this.
+ 
+The same objection applies to the four $\gamma$'s (and the four $\kappa$'s from the October report), which
+index reputation weight by group membership to manufacture the asymmetry that should emerge from
+fragmentation. Section 6.2.1 in the paper is explicit that agents in $G_r$ acquire higher $w^r_j$ by supporting
+$\sigma_r$ and condemning the dominant schema. Therefore, $w^r_j$ should be an output of the feedback process, not a
+parameter. This also makes hypotheses 5--7 of Section 5.1 in the report unanswerable in any interesting sense, since they
+would test the consequences of an assumption rather than of a mechanism.
+
+\subsection{The subgroup emergence mechanism}
+Section 3.5 of the Report has a four-step account which is circular at two levels. Step 1's trigger requires an estimate the agent
+cannot have (Section 4.2 above). Step 2 forms a utility gossip link only when both agents are in a diverging
+situation $s \in S(\sigma_i,t) \cap S(\sigma_j,t)$ and have aligned on $\sigma_i = \sigma_j =
+\sigma_r$, but $S(\sigma_r) = S_r$ and $G(\sigma_r) = G_r$ by the report's own definitions, so the
+conditions for forming the links that produce $G_r$ presuppose $G_r$ and $S_r$. Step 3's transitive
+expansion then propagates an assumed property.
+ 
+The replacement is clear, the first requirement above gives agents the estimates the trigger needs, $\mu_\text{dev}$
+gives them the samples, and the similarity threshold computed over observed actions does the work of the
+utility gossip links without knowing who is in $G_r$. The report's distinction between utility gossip links
+and reputation gossip links collapses into a single similarity-gated link, which is one fewer structure to
+build.
+
+\subsection{Out-group targeting}
+Section 3.4.2 of the report defines a mechanism for identifying the lowest reputation non-member, with its own tie
+threshold, and then never uses it. Nothing in Section 5's simulation plan consumes $I_j(t)$. It has no
+counterpart in the paper, which models the out-group relation through relative feedback weight, not
+individual targeting. I would cut this part instead of implementing it with no usecase.
+ 
+\subsection{Seeded initialization}
+The report seeds $G_r$ with $\sigma_r$ at $t = 0$. This answers a survival question, does an existing
+alternative economy persist? This is not the formation question that both the report and Section 6.1 are
+about. Seeding was previously unavoidable, since without requirements 1 and 2 from above nothing could form; with them in place,
+every agent should start under $\sigma_d$ and $G_r$ should be an outcome we measure rather than a condition
+we impose.
+
+\section{Effort Estimate and Sequencing}
+ 
+I divided the changes into three tiers based on how difficult it will be to integrate them into the current codebase.
+The risk is concentrated in the code for tracking metrics rather than in any
+of the new mechanisms.
+ 
+\textbf{Low.} (1) The reward table extension: this layers onto the existing reward table structure. (2) Similarity score: the
+utility matrix already exists, and tracking similarity can be added independently without affecting any other part of the code. (3) $\mu_\text{dev}$: one sampling
+step in role selection.
+ 
+\textbf{Medium.} (4) Persistent personal-utility tracking: small in code volume but it touches the core
+agent update loop, specifically the path where a reputation-optimizing agent copies its leader's weights.
+Everything downstream depends on it, so it should be done first and verified against current single-norm
+results. (5) Dual reputation bookkeeping: this requires parameterizing the existing update by index sets to compare reputations
+between the groups.
+ 
+\textbf{High.} (6) The attention mechanism: the constrained optimizer, implementing the solution for the closed form and the averaged
+update, then the same for $\mu_{i,p}$. This is the largest piece of new code, and it changes a quantity many
+other parts read. (7) Updating the metrics layer to accept multiple leaders. This is a major risk because 
+it fails silently. \texttt{paper\_welfare} takes a single \texttt{leader\_id}; the
+leader metric takes a global argmax of follower counts; convergence detection and the plotting harnesses
+inherit the same assumption. With two norms present these keep producing plausible numbers that mean
+nothing. Every metric needs auditing before any two-economy result is trusted.
+ 
+\textbf{Ordering.} Items 4 and 3 must be implemented before all of the others: until personal utility is tracked and followers can
+deviate, no configuration of the rest can produce a second economy. Item 7 also needs to be handled early to avoid any incorrect data
+on actual experiments. A reasonable order is
+4, 3, 1, 2, 7, then 6 validated on the single-economy experiment mentioned in section 4.6 above, and finally 5 with the full
+two-economy grid discussed in section 4.5.
+
+\end{document}
