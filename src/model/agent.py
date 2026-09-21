@@ -85,8 +85,6 @@ class Agent:
         self.state.actor_interaction_rate = float(self.params.initial_actor_interaction_rate)
         self.state.participant_interaction_rate = float(self.params.initial_participant_interaction_rate)
 
-        # Initial highest-reputation target is resolved lazily from s_i(k,t) when
-        # first needed so tied rows use the normal Section 6.4.4 tie rule over C\{i}.
         self.state.highest_rep_agent_estimate = None
 
         # Track last action for gradient updates

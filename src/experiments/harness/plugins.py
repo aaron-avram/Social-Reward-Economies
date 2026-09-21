@@ -1,10 +1,6 @@
 """
 Plugin protocols.
 
-There are two extension lifetimes and they are deliberately separate types. A
-single flat `Plugin` class with a dozen optional methods would hide which hooks
-fire when, and would let a sweep-level concern accidentally reach into a run.
-
 RunPlugin  -- lives for one simulation. Adds CLI flags, mutates the config,
               observes steps, and contributes columns to that run's record.
 SweepPlugin -- lives for the whole grid. Adds CLI flags, contributes aggregate
@@ -12,9 +8,7 @@ SweepPlugin -- lives for the whole grid. Adds CLI flags, contributes aggregate
 
 Column ownership is checked at Experiment construction: two plugins may not
 declare the same column, and the union of declared columns must match the
-experiment's record schema exactly. That turns a whole class of silent
-wiring bug -- a flag declared but never threaded through, a metric computed but
-never written -- into an ImportError at startup.
+experiment's record schema exactly.
 """
 
 from __future__ import annotations
@@ -22,7 +16,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol, Sequence, Tuple, runtime_checkable
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -142,11 +136,6 @@ class SweepPlugin:
 
 class MetricsPlugin(RunPlugin):
     """Adapter turning a plain function into a RunPlugin.
-
-    Most experiments only need to declare metrics. Rather than making each one
-    subclass, they pass an ordered column tuple and a function over RunContext.
-    The column tuple is the contract; the function must return exactly those
-    keys, and the runner checks that it does.
     """
 
     def __init__(self, name: str, columns: Sequence[str], fn) -> None:

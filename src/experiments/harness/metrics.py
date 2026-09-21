@@ -1,15 +1,10 @@
 """
 Metric computations over a finished simulation.
-
-Every function here appeared verbatim (or near-verbatim) in three or four of the
-legacy harnesses. They are pure functions of arrays, which makes them unit
-testable in isolation -- the legacy copies were only reachable by running a full
-sweep.
 """
 
 from __future__ import annotations
 
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, Sequence, Tuple
 
 import numpy as np
 
@@ -101,11 +96,6 @@ def tail_top_follower_share(
     follower_counts: np.ndarray, tail_window: int, denom: int
 ) -> float:
     """Mean top-follower count over the tail, normalised by `denom`.
-
-    NOTE: Experiment A's legacy copy normalised inside the mean and clamped the
-    denominator with max(1, denom); B/C normalised outside and guarded with an
-    early return. The two agree whenever denom > 0, which holds for every
-    committed run. `divide_inside` selects the A variant for exact parity.
     """
     if follower_counts.size == 0 or tail_window <= 0 or denom <= 0:
         return 0.0

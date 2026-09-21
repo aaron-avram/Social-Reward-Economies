@@ -1,14 +1,5 @@
 """
 Shared command-line surface.
-
-27 flags were common to all four legacy harnesses and another 6 to three of
-them, each declared independently with occasionally-diverging defaults. They are
-declared once here, in argument groups, with the per-experiment defaults passed
-in rather than re-typed.
-
-The parsing helpers below are byte-for-byte the semantics of the legacy
-`parse_csv_ints` / `parse_kappas` / `parse_role_update_*` functions; they were
-identical across the four files.
 """
 
 from __future__ import annotations

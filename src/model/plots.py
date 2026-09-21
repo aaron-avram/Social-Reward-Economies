@@ -1,18 +1,9 @@
 """
 Presentation. Depends on results.py, config.py, and agent.py only.
 
-matplotlib is imported HERE and nowhere else. Today importing the engine drags it
-in and all three sweep harnesses pay for it.
-
 Every function takes SimulationResults and returns a Figure, so plots can be
-regenerated from a saved .npz without re-running the simulation. Nothing here
-touches a MultiAgentSystem.
-
+regenerated from a saved .npz without re-running the simulation.
 Two changes from plot_results (2543-2676):
-  * It is nine panels, not six. Split one function per panel; the original is 134
-    lines in one method and the panels share nothing but the GridSpec.
-  * Saving and printing are the caller's business. plot_results() returns a Figure;
-    savefig lives in save_figure(), and the "Plot saved to ..." print (2676) is gone.
 """
 
 import matplotlib.pyplot as plt
@@ -31,7 +22,7 @@ _ROLE_ORDER = (
     (AgentRole.STATUS, "Status", "#99ff99"),
 )
 
-# 1=PU, 2=Rep, 3=Status, matching the colourbar label at 2594.
+# 1=PU, 2=Rep, 3=Status
 _ROLE_CODE = {
     AgentRole.PERSONAL_UTILITY: 1,
     AgentRole.REPUTATION: 2,
@@ -40,7 +31,7 @@ _ROLE_CODE = {
 
 
 def _agent_colors(num_agents: int) -> np.ndarray:
-    """Per-agent line colours, shared across panels 2, 3 and 6 (2563)."""
+    """Per-agent line colours, shared across panels 2, 3 and 6"""
     return plt.cm.tab10(np.linspace(0, 1, num_agents))
 
 
@@ -61,7 +52,7 @@ def _style(ax: Axes, title: str, xlabel: str = "", ylabel: str = "",
 # ============================================================================
 
 def panel_norm_consensus(ax: Axes, results: SimulationResults) -> None:
-    """Policy-weight variance on a log axis. FULL tracking only (2550-2555)."""
+    """Policy-weight variance on a log axis. FULL tracking only"""
     if not results.norm_consensus:
         _empty(ax, "Norm Convergence", "requires tracking_mode=FULL")
         return
@@ -73,7 +64,7 @@ def panel_norm_consensus(ax: Axes, results: SimulationResults) -> None:
 def panel_expected_utilities(ax: Axes, results: SimulationResults,
                              num_agents: int) -> None:
     """
-    Per-agent mean payoff over the trajectory. FULL only (2558-2570).
+    Per-agent mean payoff over the trajectory.
 
     expected_utilities is a list of dicts keyed by agent id, not a rectangular
     array, so it is densified here.
@@ -95,7 +86,7 @@ def panel_expected_utilities(ax: Axes, results: SimulationResults,
 
 def panel_follower_counts(ax: Axes, results: SimulationResults,
                           num_agents: int) -> None:
-    """Follower count per agent over time (2573-2581). Both tracking modes."""
+    """Follower count per agent over time. Both tracking modes."""
     if not results.follower_counts:
         _empty(ax, "Opinion Leader Emergence", "no data")
         return
@@ -109,10 +100,7 @@ def panel_follower_counts(ax: Axes, results: SimulationResults,
 
 def panel_role_evolution(ax: Axes, results: SimulationResults) -> None:
     """
-    Role heatmap, agents on rows and time on columns (2584-2594).
-
-    Reads role_label_history (strings, written in BOTH modes at 2447) rather than
-    roles_history (enums, FULL only at 2500), so this panel works under LIGHT.
+    Role heatmap, agents on rows and time on columns.
     """
     if not results.role_label_history:
         _empty(ax, "Role Evolution", "no data")
@@ -128,7 +116,7 @@ def panel_role_evolution(ax: Axes, results: SimulationResults) -> None:
 
 
 def panel_active_sets(ax: Axes, results: SimulationResults) -> None:
-    """|A_a(t)| and |A_p(t)| (2597-2605)."""
+    """|A_a(t)| and |A_p(t)|."""
     ax.plot(results.actor_counts, label="Actors |A_a(t)|",
             color="teal", linewidth=2)
     ax.plot(results.participant_counts, label="Participants |A_p(t)|",
@@ -140,7 +128,7 @@ def panel_active_sets(ax: Axes, results: SimulationResults) -> None:
 def panel_actor_rates(ax: Axes, results: SimulationResults,
                       num_agents: int, budget_M: float) -> None:
     """
-    Learned mu_{a,i}(t) (2608-2617). FULL only.
+    Learned mu_{a,i}(t). FULL only.
 
     NOTE actor_interaction_rate_history holds the same values and is written under
     compact debug too — switch to it if you want this panel under LIGHT.
@@ -159,11 +147,7 @@ def panel_actor_rates(ax: Axes, results: SimulationResults,
 
 def panel_welfare(ax: Axes, results: SimulationResults) -> None:
     """
-    Both paper welfare series (2620-2639).
-
-    The `.get(key, [])` guards at 2621 and 2628 are gone — these fields always
-    exist on SimulationResults. The emptiness checks remain, since a zero-step
-    run has nothing to draw.
+    Both paper welfare series.
     """
     if results.paper_welfare_followers_only:
         ax.plot(results.paper_welfare_followers_only, linewidth=2,
@@ -176,7 +160,7 @@ def panel_welfare(ax: Axes, results: SimulationResults) -> None:
 
 
 def panel_final_roles(ax: Axes, results: SimulationResults) -> None:
-    """Final role distribution (2642-2653). Needs _finalize() to have run."""
+    """Final role distribution. Needs _finalize() to have run."""
     if results.final_roles is None:
         _empty(ax, "Final Role Distribution", "run finalize() first")
         return
@@ -189,7 +173,7 @@ def panel_final_roles(ax: Axes, results: SimulationResults) -> None:
 
 
 def panel_final_followers(ax: Axes, results: SimulationResults) -> None:
-    """Final follower distribution, leader highlighted (2656-2667)."""
+    """Final follower distribution, leader highlighted."""
     if results.final_followers is None:
         _empty(ax, "Final Follower Distribution", "run finalize() first")
         return
@@ -218,7 +202,7 @@ def _empty(ax: Axes, title: str, reason: str) -> None:
 
 def plot_results(results: SimulationResults, config: SystemConfig) -> Figure:
     """
-    The nine-panel summary grid. Body from plot_results (2543-2675).
+    The nine-panel summary grid. Body from plot_results.
 
     Returns the Figure; the caller decides whether to save or show it. Panels
     whose fields were not collected under the run's tracking mode render a
@@ -261,14 +245,10 @@ def save_figure(fig: Figure, path: str, *, dpi: int = 150) -> None:
 # Text summary
 # ============================================================================
 
-def summary_report(results: SimulationResults, config: SystemConfig) -> str:
+def summary_report(results: SimulationResults) -> str:
     """
-    The end-of-run text that simulate() used to print (2512-2535). Returns a
+    Returns a
     string so the caller decides whether it reaches stdout.
-
-    Expected utilities come from the LAST tracked step's per-agent means, not from
-    agent.state.payoff_history — this function has no access to agents. Under
-    LIGHT tracking that field is absent and the section is omitted.
     """
     lines: list[str] = ["", "=" * 70, "FINAL RESULTS", "=" * 70]
 
@@ -305,8 +285,7 @@ def summary_report(results: SimulationResults, config: SystemConfig) -> str:
 
 def progress_printer(every: int = 500):
     """
-    Drop-in for simulate(on_step=...) reproducing the progress output at 2508-2509.
-    Sweeps pass nothing and stay quiet.
+    Track progress
     """
     def _on_step(t: int, total: int) -> None:
         if t % every == 0:

@@ -1,26 +1,5 @@
 """
 Audit and diagnostic recording.
-
-Replaces 476 lines spread across MultiAgentSystem — the largest single concern in
-that class, larger than the simulation loop itself. Under NullRecorder none of it
-runs, which is both the correctness win (no `if audit_rows is not None` branches
-interleaved with role decisions) and the performance win for large-N sweeps.
-
-Design notes:
-
-  * The protocol is CHUNKY: one call per decision point, not per field. These fire
-    at most once per agent per role-update epoch, never in an inner loop.
-  * `role_update_decision` is FIRST-WRITE-WINS. That reproduces line 2368, where
-    FALLBACK_TO_PU only overwrites the initial NOT_IN_C sentinel and leaves an
-    earlier step-1 decision (e.g. STAY_PU_REP_BELOW_THRESHOLD) intact. Every other
-    decision site in the original writes unconditionally, but each is the first
-    write for its agent, so uniform first-write-wins is exactly equivalent.
-  * The four enable_* methods and the four _*_enabled flags on MultiAgentSystem
-    (594-599) collapse into WHICH recorder the caller constructs.
-  * All enum values are unwrapped with .value and all numpy scalars cast to int/
-    float, because these rows are exported as JSON/CSV. The original used
-    str(self.config.eq9_averaging_mode) on a string field (1068); with enums that
-    would produce "Eq9Mode.PARTICIPANTS_ONLY" instead of "participants_only".
 """
 
 from collections import Counter
@@ -43,9 +22,7 @@ NOT_IN_C = "NOT_IN_C"
 
 class Recorder(Protocol):
     """
-    Every method must be safe to call unconditionally — callers do NOT guard with
-    `if recording:`. That is the point: it removes the ten `if audit_rows is not
-    None` branches from _update_roles_sequential.
+    Data Recorder for simulation
     """
 
     # --- role update (Section 7) ---
@@ -59,7 +36,6 @@ class Recorder(Protocol):
     def phase4(self, t: int, trace: Optional[Phase4Trace]) -> None: ...
     def rate_terms(self, t: int, agent_id: int, terms: dict) -> None: ...
 
-    # --- does this recorder want the expensive payloads built at all? ---
     @property
     def wants_phase4_trace(self) -> bool: ...
     @property
@@ -94,14 +70,7 @@ class NullRecorder:
 @dataclass
 class FullRecorder:
     """
-    Collects per-decision audit rows. Rows accumulate in memory — at N=200 over
-    2000 steps with dense history on this is gigabytes, which is why it is opt-in.
-
-    Replaces:
-        enable_async_decision_audit         (775-782)  -> construct with async_audit=True
-        enable_role_update_diagnostics      (791-799)  -> role_update_diagnostics=True
-        enable_small_n_trace_export         (801-809)  -> dense_history=True
-        set_decision_audit_preleader        (784-789)  -> preleader_id field
+    Collects per-decision audit rows.
     """
 
     async_audit: bool = True
@@ -193,15 +162,14 @@ class FullRecorder:
             }
 
     def role_update_step1(self, agent_id: int, **fields: Any) -> None:
-        """Field-level update; always overwrites. 2247-2252, 2259-2260, 2280-2284."""
+        """Field-level update; always overwrites."""
         row = self._pending.get(agent_id)
         if row is not None:
             row.update(fields)
 
     def role_update_decision(self, agent_id: int, code: str) -> None:
         """
-        FIRST WRITE WINS — see the note at the top of this file. This is what makes
-        step 3's FALLBACK_TO_PU leave an earlier step-1 decision alone (2368).
+        Update decision in data tracker if not already done so
         """
         row = self._pending.get(agent_id)
         if row is None:
@@ -210,8 +178,8 @@ class FullRecorder:
             return                                  # already decided
         row["decision_code"] = str(code)
 
-    def role_update_end(self, state, agents: Sequence[Agent]) -> None:
-        """Fill final role/following and flush. Body from 2375-2380."""
+    def role_update_end(self, agents: Sequence[Agent]) -> None:
+        """Fill final role/following and flush."""
         for i, row in self._pending.items():
             row["new_role"] = agents[i].state.role.value
             following = agents[i].state.following
@@ -236,8 +204,9 @@ class FullRecorder:
 # ============================================================================
 
 def _mode_fields(eq9_mode: Eq9Mode, leader_mode: LeaderUpdateMode) -> dict:
-    """The two mode columns every checkpoint row carries (1068-1069, 1136-1137,
-    1182-1183). .value, not str(), or the enum name leaks into the export."""
+    """
+    Return values for mode fields
+    """
     return {
         "eq9_averaging_mode": eq9_mode.value,
         "leader_update_mode": leader_mode.value,
@@ -249,10 +218,7 @@ def true_reputation_rows(
     *, checkpoint_kind: str, role_update_index: int,
     eq9_mode: Eq9Mode, leader_mode: LeaderUpdateMode,
 ) -> list[dict]:
-    """One row per agent. Body from _build_true_reputation_checkpoint_rows (1034-1072).
-
-    The _sync_reputation_views_for_diagnostics() call at 1040 is GONE — there is one
-    reputation matrix now, so there is nothing to sync.
+    """One row per agent.
     """
     n_exact = int(np.sum(tr.exact_top_mask))
     n_near = int(np.sum(tr.near_top_mask))
@@ -288,10 +254,7 @@ def estimate_consensus_rows(
 ) -> list[dict]:
     """
     One row per observer, comparing its reputation estimates against the true
-    ranking. Body from _build_estimate_consensus_checkpoint_rows (1074-1140).
-
-    Reads s[i, :] rather than agent.state.reputation_estimates — the dicts are gone.
-    Ranking is by (-value, id), matching 1090.
+    ranking.
     """
     num_agents = len(agents)
     modes = _mode_fields(eq9_mode, leader_mode)
@@ -362,10 +325,7 @@ def rate_audit_rows(
 ) -> list[dict]:
     """
     One row per agent comparing the paper's Eq. (13) driver against what the code
-    actually used. Body from _build_rate_audit_checkpoint_rows (1142-1186).
-
-    This is the ONLY caller of Agent.actor_rate_terms() — the production path uses
-    actor_rate_driver(), which returns a scalar and skips the dict entirely.
+    actually used.
     """
     modes = _mode_fields(eq9_mode, leader_mode)
     rows: list[dict] = []
@@ -415,9 +375,7 @@ def checkpoint_bundle(
     *, checkpoint_kind: str, role_update_index: int,
     eq9_mode: Eq9Mode, leader_mode: LeaderUpdateMode,
 ) -> dict[str, list[dict]]:
-    """All three checkpoint row sets. Body from build_expb_checkpoint_audit_bundle
-    (1188-1207). `tr` is computed ONCE by the caller and shared — the original
-    recomputed _compute_true_reputation_vector separately at 1041 and 1081."""
+    """All three checkpoint row sets."""
     kw = dict(checkpoint_kind=checkpoint_kind, role_update_index=role_update_index,
               eq9_mode=eq9_mode, leader_mode=leader_mode)
     return {
@@ -435,7 +393,7 @@ def role_update_diagnostic_row(
     """
     One aggregate row per role-update epoch: leader concentration, role counts, and
     the margin distributions that distinguish weak-following from fragmented-
-    following. Body from _build_role_update_diagnostic_row (1209-1312).
+    following.
     """
     num_agents = len(agents)
     follower_counts = [len(a.state.followers) for a in agents]

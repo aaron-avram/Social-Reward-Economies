@@ -39,10 +39,6 @@ class RewardModel(ABC):
         """u_i(s, x) for every observer i — one realized (state, action)."""
         return np.array(self.table[:, state, action], dtype=float, copy=True)
 
-    def actual_payoff(self, agent_id: int, state: int, action: int) -> float:
-        """ Get payoff for a specific agent """
-        return self.observer_utility(agent_id, state, action)
-
 
 def state_probabilities(num_states):
     """ Compute State Probabilities """

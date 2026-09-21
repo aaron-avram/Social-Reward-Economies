@@ -1,13 +1,6 @@
 """
 SystemConfig construction from CLI args plus a grid cell.
 
-`make_config` was ~55 near-identical lines in each legacy harness. The only real
-differences were which sweep variable got injected, which fields were read from
-args versus hardcoded, and -- in one case -- a bug: reputation_status_scaling's
-original `make_config` declared --c-threshold/--B-R/--B-F on the CLI and then
-hardcoded all three, so those flags did nothing. Building the config from one
-function with an explicit override dict makes that class of mistake visible.
-
 Note the stepsize bases are identical across all four experiments
 (alpha_pu=0.05, beta_status=0.05, eta_v=0.1, eta_s=0.1, eta_J=0.05) with decay
 0.01, so they live here rather than in each experiment.

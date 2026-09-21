@@ -1,31 +1,5 @@
 """
 Typed per-run results.
-
-Replaces the 30-key string dict declared at 553-590 of code_debugged.py.
-
-Four discrepancies in the original that this file fixes, all verified against source:
-
-  1. SEVEN+ fields are created only by setdefault and never appear in the
-     declaration: online_active_actor_payoff_sum (2399), social_welfare (2410),
-     status_counts (2415), pu_counts (2418), rep_counts (2421),
-     role_update_diagnostics (2425), and three *_checkpoints (2434-2441).
-     Declared schema != runtime schema.
-
-  2. THREE fields are set by simulate() as scalars, not lists: final_roles,
-     final_followers, opinion_leader (2536-2538). A dict of "histories" that also
-     holds three non-histories is a trap for anything iterating it.
-
-  3. refresh_last_tracked_state (1314-1404) is NOT a full mirror of _track_results.
-     It overwrites ~21 fields and leaves ~10 alone (actor_counts,
-     participant_counts, online_active_actor_payoff_sum, norm_consensus,
-     expected_utilities, actor_rates, roles_history, actual_payoffs,
-     role_update_times). Marked per field below with NOT where it is skipped.
-     Preserve this asymmetry — it is live behaviour.
-
-  4. Field types are not what the names suggest:
-       expected_utilities  -> dict[int, float], not float    (2494-2498)
-       roles_history       -> list[AgentRole], not list[str] (2500)
-       role_update_times   -> RAGGED; appended only on update epochs (2413)
 """
 
 from dataclasses import dataclass, field, fields
@@ -97,9 +71,6 @@ class StepRecord:
     avg_s_by_target: Optional[dict[int, float]] = None
     delta_v_matrix: Optional[np.ndarray] = None
 
-
-# StepRecord field -> SimulationResults field. Names differ because the original
-# dict keys are what the three sweep harnesses read; keep them.
 _FIELD_MAP = {
     "follower_counts": "follower_counts",
     "actor_count": "actor_counts",
@@ -139,9 +110,6 @@ _FIELD_MAP = {
     "avg_s_by_target": "avg_s_by_target_history",
     "delta_v_matrix": "delta_v_matrix_history",
 }
-
-# Fields that refresh_last_tracked_state rewrites (1320-1404). Everything else in
-# StepRecord is written once, at append time, and never revised.
 _REFRESHED = (
     "follower_counts",
     "paper_welfare_all_agents", "paper_welfare_followers_only",
@@ -179,13 +147,13 @@ class SimulationResults:
     online_active_actor_payoff_sum: list[float] = field(default_factory=list)   # NOT
     paper_welfare_all_agents: list[float] = field(default_factory=list)
     paper_welfare_followers_only: list[float] = field(default_factory=list)
-    social_welfare: list[float] = field(default_factory=list)  # alias of followers-only (2410)
+    social_welfare: list[float] = field(default_factory=list)
     status_counts: list[int] = field(default_factory=list)
     pu_counts: list[int] = field(default_factory=list)
     rep_counts: list[int] = field(default_factory=list)
     role_label_history: list[list[str]] = field(default_factory=list)
 
-    # --- ragged: one entry per role-update epoch, not per step (2413) ---
+    # --- ragged: one entry per role-update epoch, not per step ---
     role_update_times: list[int] = field(default_factory=list)                  # NOT
 
     # --- compact histories ---
@@ -227,7 +195,7 @@ class SimulationResults:
     estimate_consensus_checkpoints: list[dict] = field(default_factory=list)
     rate_audit_checkpoints: list[dict] = field(default_factory=list)
 
-    # --- run summary, set once at the end (2536-2538) ---
+    # --- run summary, set once at the end ---
     final_roles: Optional[list[AgentRole]] = None
     final_followers: Optional[list[int]] = None
     opinion_leader: int = -1
@@ -243,7 +211,7 @@ class SimulationResults:
             if value is not None:
                 getattr(self, dst).append(value)
 
-        # social_welfare aliases the followers-only welfare (2410).
+        # social_welfare aliases the followers-only welfare.
         self.social_welfare.append(rec.paper_welfare_followers_only)
 
         if role_updated:
@@ -252,12 +220,12 @@ class SimulationResults:
     def overwrite_last(self, rec: StepRecord) -> None:
         """
         Rewrite the most recent entry, for the subset of fields that
-        refresh_last_tracked_state touches (1320-1404).
+        refresh_last_tracked_state touches.
 
         Used by async harnesses that apply subset role updates after step()-level
         tracking, so timestep t reflects the post-update follower graph.
 
-        No-op on an empty history, matching the guard at 1320-1321.
+        No-op on an empty history.
         """
         if not self.follower_counts:
             return
@@ -319,11 +287,6 @@ class SimulationResults:
         """
         Save with the schema stamp and the full config, so a stale results file is
         detectable rather than inferred from a timestamp.
-
-        Ragged and object-valued fields (per-agent lists, dicts, matrices) are
-        stored with dtype=object, which requires allow_pickle=True on load. If you
-        want pickle-free loading, restrict this to the rectangular fields your
-        plots actually read and drop the rest.
         """
         payload: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION,

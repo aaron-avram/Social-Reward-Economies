@@ -62,11 +62,6 @@ class MultiAgentSystem:
         """
         PHASE 1. theta(mu) = 1 - exp(-mu) activation for actors and participants.
 
-        CHANGE from the original (1917-1933): draw N uniforms per set per step and
-        threshold, rather than drawing inside the loop. Makes each agent's draw a
-        function of (seed, i, t) only, so common random numbers survive a parameter
-        change. Costs a few unused draws; buys paired comparisons across the sweep.
-
         Returns sorted int arrays.
         """
         ids = np.arange(self.config.dims.num_agents)
@@ -131,7 +126,7 @@ class MultiAgentSystem:
         Order within each actor matters: social_support_sum and the J^s update run
         BEFORE the role branch, because Step 2 of the role update compares
         kappa * J^s against J^pu and needs J^s current even for agents not yet in
-        STATUS (1977-1982).
+        STATUS
         """
         for k in actor_ids:
             k = int(k)
@@ -175,16 +170,12 @@ class MultiAgentSystem:
 
     def _build_refresh_record(self) -> StepRecord:
         """Only the fields overwrite_last() reads. The activation counts and
-        payoff-derived fields are deliberately not refreshed (1320-1404)."""
+        payoff-derived fields are deliberately not refreshed"""
         return self._build_step_record(payoffs={}, num_actors=0, num_participants=0)
 
     def update_roles(self, candidates=None, refresh: bool = True) -> None:
         """
         Public entry point for asynchronous subset role updates.
-
-        Replaces the harness-facing _update_roles_sequential(candidates) plus the
-        separate refresh_last_tracked_state() call: the refresh is folded in, so
-        timestep t reflects the post-update follower graph.
         """
         update_roles_sequential(
             self.agents,
@@ -208,16 +199,12 @@ class MultiAgentSystem:
     
     def _reputation_learning(self, U, actor_ids, participant_ids, sizes) -> None:
         """
-        PHASE 4. One call now, not two implementations.
+        PHASE 4.
 
             self.rep, trace = phase4(self.rep, U, actor_ids, participant_ids,
                                      eta_v, self.config.algorithm, eq9_mode,
                                      leader_mode, self.rng.tiebreak,
                                      trace=self.rec.wants_phase4_trace)
-
-        The actor-rate loop that was inside _phase4_updates_* (1608-1610) lives HERE,
-        after the call: for each active participant, update_actor_interaction_rate.
-        It is Eq. (13), not Eq. (9).
         """
         eta_v = sizes.eta_v
 
@@ -239,8 +226,7 @@ class MultiAgentSystem:
         self._last_phase4_trace = trace
         self.rec.phase4(self.time_step, trace)
 
-        # Eq. (13) — actor interaction rates. Was inside _phase4_updates_* at
-        # 1608-1610; it is rate learning, not reputation learning.
+        # Eq. (13) — actor interaction rates
         alpha_rate = sizes.alpha_rate
         for i in participant_ids:
             self.agents[int(i)].update_actor_interaction_rate(alpha_rate)
@@ -248,8 +234,7 @@ class MultiAgentSystem:
 
     def _adopt_leader_behavior(self) -> None:
         """
-        PHASE 5. Resolve each REPUTATION agent's leader weights and pass them down —
-        agents no longer hold a system reference.
+        PHASE 5. Resolve each REPUTATION agent's leader weights and pass them down
 
         Read leaders from the pre-update follow graph so that within one step the
         order of iteration cannot matter.
@@ -301,7 +286,7 @@ class MultiAgentSystem:
     def _track(self, payoffs, num_actors, num_participants, role_updated: bool) -> None:
         """
         Build one StepRecord and append it. Always appends — `role_updated` only
-        gates role_update_times and the diagnostic row (2412-2442).
+        gates role_update_times and the diagnostic row.
         """
         rec = self._build_step_record(payoffs, num_actors, num_participants)
         self.results.append(rec, role_updated=role_updated)
@@ -333,10 +318,6 @@ class MultiAgentSystem:
     def _fill_dense(self, rec: StepRecord) -> None:
         """
         Dense per-timestep snapshots for small-N debug runs.
-        Body from _record_small_n_trace_snapshot (811-855).
-
-        The enable-flag check at 812-813 is gone — the caller already gated on
-        self.rec.wants_dense_history.
         """
         N = self.config.dims.num_agents
 
@@ -436,11 +417,6 @@ class MultiAgentSystem:
     def simulate(self, num_steps: Optional[int] = None) -> SimulationResults:
         """
         Run the simulation and return results.
-
-        Prints nothing — the progress and summary output at 2505-2535 moves to
-        plots.summary_report(), so the three sweep harnesses stay quiet. A harness
-        that wants the old output calls:
-            print(plots.summary_report(results, cfg))
         """
         steps = self.config.runtime.num_time_steps if num_steps is None else int(num_steps)
 
@@ -451,7 +427,7 @@ class MultiAgentSystem:
         return self.results
 
     def _finalize(self) -> None:
-        """Run summary written once at the end (2536-2538)."""
+        """Run summary written once at the end."""
         follower_counts = [len(a.state.followers) for a in self.agents]
         self.results.final_roles = [a.state.role for a in self.agents]
         self.results.final_followers = follower_counts

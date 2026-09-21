@@ -1,22 +1,5 @@
 """
 Spec-driven aggregation.
-
-The legacy `aggregate()` functions were 60-90 lines each of `m1, s1, c1 = ...`
-followed by a positional dataclass construction -- a form where inserting a
-metric in the middle silently renames every column after it. Here the output
-schema is a declared ordered list of columns and the code that fills them is
-shared.
-
-Two column kinds:
-
-  Triple(field)  -> mean_<field>, std_<field>, ci95_<field>
-  Derived(name)  -> a single column computed from the group
-
-Filtering matters and is explicit. Several legacy metrics dropped sentinel
-values before averaging (e.g. time-to-threshold uses -1 for "never reached"),
-and one of them -- mean_time_to_90pct_followers -- is therefore CONDITIONAL ON
-REACHING. Whether a run reaches is itself a function of gamma and kappa, so
-that mean must be read alongside reach_rate, never alone.
 """
 
 from __future__ import annotations
@@ -38,9 +21,6 @@ class Triple:
     fallback: Optional[Sequence[float]] = None
     #: Optional override for the column name stem (defaults to `field`).
     stem: Optional[str] = None
-    #: Drop non-finite values before averaging. Experiment D's local
-    #: `_mean_std_ci` did this unconditionally; A/B/C's did not, and instead
-    #: filtered explicitly at each call site with `where=`.
     finite_only: bool = False
 
     @property
@@ -105,9 +85,6 @@ def aggregate(
     spec: Sequence[AggregateColumn],
 ) -> List[Dict[str, Any]]:
     """Group `records` by `group_by` and apply `spec` to each group.
-
-    Groups are emitted in sorted key order, matching the legacy behaviour.
-    `n_runs` is always emitted immediately after the key columns.
     """
     grouped: Dict[Tuple[Any, ...], List[Dict[str, Any]]] = {}
     for r in records:

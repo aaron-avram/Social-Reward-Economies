@@ -1,20 +1,5 @@
 """
 Sweep axes and grid enumeration.
-
-The four legacy harnesses each hard-coded their own nested loop:
-
-    for reward_model: for num_states: for seed:      # Experiment A
-    for gamma:        for kappa:      for seed:      # Experiments B / C
-    for seed:                                        # Experiment D
-
-Those are the same loop with different axes. Making the axes *data* rather than
-control flow is what lets one runner serve all four, and it is what makes the
-per-run CSV key columns, the aggregation grouping, and the figure faceting fall
-out of a single declaration instead of being restated three times each.
-
-Iteration order is the Cartesian product in axis order, seeds innermost. That
-reproduces the legacy row order exactly, which is what makes byte-identical
-parity against the committed baselines a meaningful test.
 """
 
 from __future__ import annotations
@@ -89,7 +74,7 @@ class Grid:
 
 
 def format_num(value: float) -> str:
-    """Filename-safe number formatting (verbatim from reputation_status_scaling)."""
+    """Filename-safe number formatting."""
     if float(value).is_integer():
         return str(int(value))
     return f"{value:g}".replace(".", "p").replace("-", "m")

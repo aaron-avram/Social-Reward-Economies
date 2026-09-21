@@ -1,13 +1,5 @@
 """
 Read-only metrics: true reputation, paper welfare (Section 2.2.7 / Definition 5.2).
-
-Design rules:
-  * Nothing here mutates. Every function is a pure read over (agents, rewards).
-  * No dependency on system.py. These take the pieces they need as arguments so
-    the module sits below system in the import graph.
-  * `policies` is passed in rather than pulled from agents, because every function
-    here needs the SAME role-consistent policy per agent and recomputing it three
-    times was a large part of the original's cost.
 """
 
 from dataclasses import dataclass
@@ -24,12 +16,7 @@ def current_policies(agents: Sequence[Agent],
     """
     (N, S, A) array of each agent's role-consistent policy.
 
-    Computed once and shared by every metric below. The original called
-    get_current_policy inside triple-nested loops (889, 897, 1848, 1881) —
-    N*S*A softmaxes recomputed per metric per tracked step.
-
-    `leader_weights` supplies w_k(t) for REPUTATION agents, resolved by the caller
-    (agents no longer hold a system reference).
+    Computed once and shared by every metric below.
     """
     W = np.stack([_effective_weights(a, leader_weights) for a in agents])
     logits = W - W.max(axis=2, keepdims=True)
@@ -60,7 +47,7 @@ def expected_observer_utilities(policies: np.ndarray, rewards: RewardModel) -> n
 
 @dataclass(frozen=True)
 class TrueReputation:
-    """Replaces the Dict[str, object] returned at 929-939."""
+    """Reputation Data"""
     expected_utilities: np.ndarray        # (N, N)
     theta_mu: np.ndarray                  # (N,)
     sum_expected_utility_others: np.ndarray  # (N,)
@@ -77,9 +64,9 @@ def true_reputation(agents: Sequence[Agent], policies: np.ndarray,
     """
     R_k = theta(mu_{a,k}) * sum_{i != k} E[u_i(s, x_k)].
 
-    Ranking is by (-value, id) so ties break deterministically by agent id (915).
+    Ranking is by (-value, id) so ties break deterministically by agent id.
     `unique_true_top_agent` is -1 unless exactly one agent attains the max within
-    1e-12 — keep both tolerances (922-925), they are read separately by diagnostics.
+    1e-12 — keep both tolerances, they are read separately by diagnostics.
     """
     num_agents = len(agents)
     expected_utilities = expected_observer_utilities(policies, rewards)
@@ -125,9 +112,6 @@ def resolve_root_leader(agent_id: int, following: Sequence[Optional[int]],
     """
     Walk the follow chain to its root. Returns -1 if a cycle is detected, or if the
     agent neither follows nor is followed.
-
-    Takes plain sequences rather than agents so it can be unit-tested against
-    hand-built chains — cycle detection is the kind of thing worth testing directly.
     """
     leader = following[agent_id]
     if leader is None:
@@ -145,8 +129,7 @@ def resolve_root_leader(agent_id: int, following: Sequence[Optional[int]],
 
 def current_opinion_leader(agents: Sequence[Agent]) -> int:
     """
-    argmax over follower counts. Note np.argmax breaks ties by LOWEST index, which
-    differs from the (-value, id) rule in true_reputation — preserved as-is (1819-1823).
+    argmax over follower counts.
     """
     follower_counts = [len(a.state.followers) for a in agents]
     if len(follower_counts) == 0:
@@ -162,15 +145,8 @@ def paper_welfare(agents: Sequence[Agent], policies: np.ndarray, rewards: Reward
 
     with pi the common norm induced by the opinion leader's policy.
 
-      exclude_leader=False -> W_all              (Section 2.2.7, 1825-1857)
-      exclude_leader=True  -> W_followers        (Definition 5.2, 1859-1890)
-
-    The two originals are identical apart from the `if i == leader_id: continue`
-    at 1874 — one function with a flag, not two copies.
-
-    Vectorised form: with pi = policies[leader_id] of shape (S, A),
-        U = einsum('sa,isa->i', p_s[:, None] * pi, rewards.table)
-    replaces the triple loop.
+      exclude_leader=False -> W_all              (Section 2.2.7)
+      exclude_leader=True  -> W_followers        (Definition 5.2)
     """
     if leader_id is None:
         leader_id = current_opinion_leader(agents)

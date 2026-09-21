@@ -18,7 +18,7 @@ def write_csv(
     When `columns` is given it is the authoritative order and every row must
     supply exactly those keys -- a mismatch raises rather than silently dropping
     a metric via `extrasaction="ignore"`. When omitted the first row's key order
-    is used, reproducing the legacy behaviour.
+    is used.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:

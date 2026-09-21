@@ -4,12 +4,6 @@ The Experiment declaration and its `main()`.
 An experiment is now a value, not a script: axes, plugins, a record schema, an
 aggregation spec, and output naming. `Experiment.main()` is the same driver for
 all of them.
-
-Declaring `record_columns` explicitly may look redundant next to the plugins
-that fill them, but it is the point: it is the CSV contract, checked against
-plugin ownership at construction. A metric that no plugin claims, or a plugin
-column absent from the schema, is an error at startup rather than a column that
-silently vanishes from a sweep that took six hours.
 """
 
 from __future__ import annotations

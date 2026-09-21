@@ -1,10 +1,6 @@
 """
 Shared plotting.
 
-`plot_metric`, the errorbar helper, and the gamma-kappa heatmap were each
-reimplemented per harness with slightly different faceting. Here the faceting is
-a parameter: `line_by` names the record fields that separate one line from
-another, `x_field` names the abscissa.
 """
 
 from __future__ import annotations

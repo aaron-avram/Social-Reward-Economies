@@ -1,14 +1,5 @@
 """
 Section 7: sequential three-step role update.
-
-Design rules:
-  * Steps 1-3 operate on a RoleUpdateState working copy; agent objects are written
-    exactly once, at the end (apply). Nothing here reads agent.state mid-procedure
-    except the three scalars pulled out in `_agent_signals`.
-  * All instrumentation goes through `rec` (a Recorder). Under NullRecorder none of
-    the ~100 lines of audit bookkeeping in the original executes.
-  * The ORDER of steps 1-3 is load-bearing (Section 7.2, indirect follower chains).
-    Do not reorder, and do not parallelise step 1.
 """
 
 from dataclasses import dataclass
@@ -111,11 +102,6 @@ def _effective_threshold(agent_id: int, C_r: set[int], params: AlgorithmParams) 
     """
     Hysteresis (Section 7.1.3): B_F for agents already following, B_R otherwise.
     Returns (B_i, hysteresis_active).
-
-    NOTE the original guards on `B_F < B_R` at 2223 — with the __post_init__ check
-    in AlgorithmParams that condition is now invariant, so `hysteresis_active`
-    reduces to `agent_id in C_r`. Keep the explicit form anyway; it documents the
-    dependency and costs nothing.
     """
     hysteresis_active = (agent_id in C_r and params.B_F < params.B_R)
     return (params.B_F if hysteresis_active else params.B_R, hysteresis_active)
@@ -128,9 +114,6 @@ def _redirect_target(
     """
     [ROLE-3] If the chosen target is itself a follower, follow its leader instead,
     to avoid indirect chains. Returns (best_k, target_was_follower).
-
-    Single-hop only — matches the original. A chain of length >2 is prevented by
-    the invariant that followers[i] is empty for i in R, not by iterating here.
     """
     leader = state.following[best_k]
     if leader is None:
@@ -151,23 +134,6 @@ def step1_reputation(
     Agents decide whether to follow their highest-reputation target.
 
     Condition [ROLE-2], Section 7.3:   γ · s_i(L_i, t)  >  max(B_i, Ĵ^pu_i)
-
-    Sequence per agent (order matters):
-      1. B_i via hysteresis                              (2220-2228)
-      2. target L_i, already resolved by phase4          (2232-2241)
-      3. condition                                       (2258)
-      4. if met: redirect [ROLE-3]                       (2266-2278)
-                 self-follow block [ROLE-4] -> continue  (2288-2292)
-                 rehome own followers [ROLE-5]           (2298-2302)
-                 detach, set role/following, add to R    (2304-2311)
-         else:   if i was in C_r, drop from R so step 3
-                 sends it back to PU                     (2323-2326)
-
-    C is computed ONCE before the loop (2200) and not refreshed as follower sets
-    change during it. That is the original's behaviour — preserve it.
-
-    `rng` is used only for the shuffle at 2212. Draw it from the `order` substream.
-
     """
     C = set(i for i in range(num_agents) if len(state.followers[i]) == 0)
     C_r = C & state.R
@@ -325,12 +291,7 @@ def collect_signals(
 ) -> dict[int, AgentSignals]:
     """
     Read s_i(L_i,t) straight from the reputation matrix rather than from
-    agent.state.reputation_estimates — the dicts are gone.
-
-    This REPLACES the defensive sync at 2110-2112 and the lazy leader resolution
-    at 2232-2236. By this point phase4 has already resolved every participant's L;
-    for a never-participating agent L is still NO_LEADER and target_rep is 0.0,
-    which reproduces the original's `.get(k, 0.0)` fallback at 2241.
+    agent.state.reputation_estimates.
     """
     return {
         i : AgentSignals(
@@ -362,16 +323,7 @@ def update_roles_sequential(
     rec: Recorder = NullRecorder(),
 ) -> None:
     """
-    Section 7 in full. Replaces _update_roles_sequential (2098-2380).
-
-      1. updatable = resolve_updatable(...)          ; early return if empty
-      2. state = RoleUpdateState.from_agents(agents)
-      3. signals = collect_signals(...)
-      4. rec.role_update_begin(...)                  (2136-2187)
-      5. S.discard(i) for i in updatable             [STATUS-2] (2193-2194)
-      6. step1_reputation / step2_status / step3_fallback_pu
-      7. state.apply(agents)                         (2372-2373)
-      8. rec.role_update_end(...)                    (2375-2380)
+    Section 7 in full.
 
     Step 5 must come before step 1: it clears stale STATUS so zero-follower status
     agents do not persist.
@@ -407,13 +359,6 @@ class RoleUpdateSchedule:
       2. explicit T_n sequence    (role_update_T_sequence)
       3. generated: constant T    (fixed_role_update_interval)
          or geometrically increasing from role_update_base_interval
-
-    Replaces _build_role_update_epochs (753-773) and the inline scheduling in
-    step() (2049-2087).
-
-    DELETE, do not port: `current_interval` at 2060-2068. It is computed and never
-    read; its only consumer is the commented-out block at 2085-2087, while the live
-    path recomputes `next_interval` at 2075-2081.
     """
 
     def __init__(self, sched: ScheduleParams):
@@ -453,8 +398,7 @@ class RoleUpdateSchedule:
     def due_count(self, t: int) -> int:
         """
         Epochs firing at time t. Advances internal state, so call exactly once
-        per step. Reproduces the catch-up `while` at 2051-2058 (explicit epochs)
-        and the single-fire `if` at 2070-2083 (generated intervals).
+        per step.
         """
         fired = 0
         while self.n < self._num_epochs() and t >= self._next_time:

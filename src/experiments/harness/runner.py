@@ -9,19 +9,13 @@ One `run_single` serves all four experiments. It:
      around each engine step and driving the async scheduler;
   4. computes the derived `RunSummary` once;
   5. collects each plugin's declared columns into the run record.
-
-The engine still prints during `step()`, which the legacy harnesses worked
-around by wrapping the loop in `redirect_stdout`. That workaround lives here,
-once, behind `silence_engine`. It is a bug workaround, not a feature: the right
-fix is for the engine to route progress through the Recorder / `progress_printer`
-rather than stdout, at which point this can go.
 """
 
 from __future__ import annotations
 
 import io
 from contextlib import redirect_stdout, nullcontext
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 import numpy as np
 
@@ -39,24 +33,6 @@ from experiments.harness.schedule import RoleUpdateScheduler
 
 def resolve_engine_seed(args, seed: int) -> int:
     """The seed actually handed to the engine's RngBundle.
-
-    Two derivations, because the v2 outputs were produced through the compat
-    shim and cannot be reproduced without reproducing its quirk:
-
-      legacy_global -- the v2 path. Harnesses called np.random.seed(s) and never
-                       passed a seed to SystemConfig, so compat drew the engine
-                       seed from the freshly-seeded GLOBAL stream
-                       (np.random.randint). The trajectory is a deterministic
-                       function of s, but through one extra layer of laundering.
-                       Required for byte-identical parity with committed CSVs.
-
-      direct        -- runtime.seed = s. What the engine's own API intends, what
-                       the unit tests assume, and what anyone reading the code
-                       would expect. Produces different (equally valid)
-                       trajectories.
-
-    The draw must happen after np.random.seed(s) and before the async scheduler
-    draws its timers, matching the legacy call order exactly.
     """
     if str(getattr(args, "seed_derivation", "legacy_global")) == "direct":
         return int(seed)
@@ -121,8 +97,6 @@ def run_single(
     `ctx.side_tables`. Returning the context rather than a record lets a
     stateful experiment such as D pull out its own diagnostics.
     """
-    # Legacy behaviour: the async scheduler's timers come from the global RNG,
-    # seeded here. See RoleUpdateScheduler for why and for the opt-out.
     np.random.seed(int(seed))
 
     ctx = RunContext(args=args, mode=mode, cell=dict(cell), seed=int(seed))

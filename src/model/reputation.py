@@ -5,8 +5,6 @@ Design rules for this module:
   * The dense matrices are the ONLY representation of v and s. No per-agent dicts,
     no sync helpers.
   * Functions take and return state; they do not reach into Agent or MultiAgentSystem.
-    The single exception is `Agent` import for AgentRole, which is not needed here at all
-    (deliberately: reputation learning is role-independent).
   * Randomness enters through an explicit `rng` argument, used only for tie-breaking.
 """
 
@@ -63,7 +61,7 @@ class Phase4Trace:
     Diagnostic payload. Built only when a recorder asks for it — the `delta_v` copy
     is (N, N) per step and must not be allocated on the production path.
 
-    Replaces the Dict[str, object] returned by _phase4_updates_numpy_fast (1612-1620).
+    Replaces the Dict[str, object] returned by _phase4_updates_numpy_fast.
     """
     gossip_target_ids: list[int] = field(default_factory=list)
     averaging_agent_ids: list[int] = field(default_factory=list)
@@ -103,11 +101,6 @@ def resolve_missing_leaders(
 ) -> None:
     """
     Fill L[i] for any i in `agent_ids` still holding NO_LEADER. Mutates state.L.
-
-    NOTE — this makes explicit a lazy write that is currently HIDDEN inside
-    _compute_gossip_target_ids_from_active_participants (975-981): that function
-    silently resolves L as a side effect of "computing" targets. Keep the resolution
-    step separate so `gossip_targets` below is a pure read.
     """
     n = state.num_agents
     for i in agent_ids:
@@ -227,21 +220,7 @@ def phase4(
     trace: bool = False,
 ) -> tuple[ReputationState, Optional[Phase4Trace]]:
     """
-    One Phase-4 step. Single implementation replacing both
-    _phase4_updates_numpy_fast (1533-1620) and _phase4_updates_python (1622-1717).
-
-    Order matters and must match the original exactly:
-      1. snapshot s if leader_mode is PARTICIPANTS_ONLY_PRE_EQ9   (1554-1556)
-      2. Eq. (4): v, delta_v                                       (1558-1564)
-      3. if participants:
-           a. resolve missing L, then B(t)                         (1567-1578)
-           b. averaging set, Eq. (9)                               (1579-1594)
-           c. update L from snapshot or post-Eq.(9) s              (1596-1606)
-
-    The `update_actor_rates` loop at 1608-1610 is NOT here. Rate learning is not a
-    reputation concern and calling Agent methods from this module would put a
-    mutation of agent state behind a reputation-shaped signature. Move it to the
-    Phase-4 caller in system.py.
+    One Phase-4 step.
     """
 
     prev_v = state.v

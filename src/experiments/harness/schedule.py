@@ -1,27 +1,5 @@
 """
 Async role-update scheduling.
-
-This loop was duplicated near-verbatim in all four legacy harnesses. It is not
-experiment configuration -- it is engine scheduling semantics -- so it lives in
-exactly one place and every experiment drives it through `RoleUpdateScheduler`.
-
-Two async policies exist, selected by `--async-role-update-prob`:
-
-  * omitted  -> independent per-agent clocks. Each agent draws an initial timer
-                uniformly in [1, T_0], and on expiry advances through the
-                interval sequence (T_seq, epoch-derived intervals, or a constant
-                base interval).
-  * given p  -> each agent updates independently with probability p per step.
-
-RNG NOTE
---------
-The legacy code drew these timers from the *global* numpy RNG (`np.random.seed`
-followed by `np.random.randint`), while the engine seeds its own `RngBundle`.
-Async schedules therefore depended on global interpreter state the engine does
-not own: reproducible across separate processes, but silently non-deterministic
-under any in-process parallelism. `rng_mode="stream"` fixes that with a
-dedicated Generator spawned from the run seed. It is NOT bit-compatible with
-existing async outputs, so `"global"` remains the default.
 """
 
 from __future__ import annotations
@@ -38,10 +16,7 @@ from experiments.harness.cli import (
 
 
 def build_async_interval_sequence(args) -> Tuple[List[int], int, str]:
-    """Resolve the async interval sequence and its provenance.
-
-    Precedence: explicit T-sequence, then epoch list, then constant base
-    interval. Verbatim semantics from the legacy `_build_async_interval_sequence`.
+    """Resolve the async interval sequence.
     """
     s0 = max(0, int(args.role_update_s0))
 
@@ -86,13 +61,6 @@ class RoleUpdateScheduler:
         self.role_timers = role_timers
         self.update_prob = update_prob
         self.rng = rng
-        # LEGACY INCONSISTENCY: A/B/C refreshed the last tracked state and
-        # appended to role_update_times after every async role update; D's
-        # `_finalize_async_step` did neither. The flag reproduces both, but the
-        # difference is almost certainly an oversight in D rather than a design
-        # choice -- it means D's step t does NOT reflect the post-update
-        # follower graph, so its per-step follower series lags by one step
-        # relative to the other three experiments.
         self.refresh = bool(refresh)
         self.interval_indices = (
             np.zeros(self.num_agents, dtype=int) if role_timers is not None else None
@@ -117,7 +85,7 @@ class RoleUpdateScheduler:
             (schedule_seed,) = np.random.SeedSequence(int(seed)).spawn(1)
             rng: Optional[np.random.Generator] = np.random.default_rng(schedule_seed)
         else:
-            rng = None  # legacy: draw from global np.random
+            rng = None  # draw from global np.random
 
         prob = getattr(args, "async_role_update_prob", None)
         if prob is not None:
@@ -190,9 +158,6 @@ class RoleUpdateScheduler:
         return True
 
     def _commit(self, system, update_list: Sequence[int]) -> None:
-        # The real engine API. `update_roles(..., refresh=True)` folds in the
-        # `refresh_last_tracked_state()` that the legacy code called separately,
-        # so timestep t reflects the post-update follower graph either way.
         system.update_roles(list(update_list), refresh=self.refresh)
         if self.refresh:
             system.results.role_update_times.append(int(system.time_step))
@@ -203,9 +168,7 @@ def async_role_interval_override(args, mode: str):
     """Schedule fields for `make_config` under async mode.
 
     In async mode the engine's own periodic role update must be disabled -- the
-    scheduler above owns role updates entirely -- which the legacy code achieved
-    by pushing the interval past the horizon. Returns
-    (base_interval, s0, T_sequence, epochs).
+    scheduler above owns role updates entirely
     """
     role_interval = int(args.role_update_base_interval)
     role_s0 = int(args.role_update_s0)
