@@ -1,0 +1,321 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{array}
+
+\title{Norm Emergence Report: Social Reward Economies}
+\author{Aaron Avram}
+\date{September 24th 2026}
+
+\begin{document}
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{claim}[theorem]{Claim}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{note}[theorem]{Note}
+
+\maketitle
+
+\section{Introduction}
+In this report, I wish to develop a model for a multi-agent system with two social reward economies
+within the frameworked proposed in the \textit{Social Reward Economies} paper. We use multiple real-life
+examples as guides to the right formal definitions, with the \#MeToo movement as a primary case study.
+
+A social reward economy is defined formally in Section 3, but intuitively
+it is a network of socially responsive agents that want to maximize their perceived social reward.
+They do this by choosing schema and behaviours that produce positive group feedback while while avoiding
+negative feedback.
+
+This report only considers the case where a group of agents $G$ in a social reward economy contains a subgroup $G_r$
+which has its on social reward economy. The norm of the former economy can be thought of as the "dominant norm"
+with the latter being the "resistant norm". These two groups and their social reward economies will be defined
+precisely in Sections 4 and 5 respectively. A major point of interest will be how these two groups
+and their differing norms interact, which will be explored in detail in Section 6.
+
+\section{Modelling the Real World}
+First we explore some real-world examples to better understand
+how to motivate the formal definitions.
+
+A first example is the formation of the \#MeToo Movement. In this situation, society
+could be taken as the dominant group, and young and middle aged women as the resistant subgroup.
+These women are unhappy with the dominant norm, which rewards keeping quiet about
+sexual harassment in the workplace. As a subgroup, they instead reward speaking
+up about sexual harassment and shaming the individuals who do these things.
+Hence, the reputation of abusers in the resistant group will be highly negative
+but in the dominant group their reputation would be average or even potentially very high
+if they occupy a position of power (e.g. a high ranking corporate executive). Conversely,
+the reputation of a member of the \#MeToo movement in the movement itself will be quite high,
+but in the dominant group it would be lower or potentially negative, depending on how strongly
+the movement has caught on within the larger group.
+
+Here it is important to actually distinguish between three types of people:
+those in charge in the dominant group (such as high ranking corporate officials)
+the members of the \#MeToo movement and finally the general public (which is just everyone else in society). In this setup
+it is clear that those in charge benefit at the expense of many women in the workplace
+and by extension many members of the \#MeToo movement. Hence, the group in charge
+will have an incentive to preserve the dominant norm, which advocates for not calling out sexual harassment,
+as this directly benefits them. Conversely, women and the \#MeToo movement wish to overturn the dominant
+norm in favour of their resistant one, that sexual harassment should be made public and the perpetrators
+should be shamed, as this benefits them. However, the general public is not strongly affected by the behaviours
+of either of the above groups, yet they make up a majority of the population. Hence
+both of the previous groups aim to enforce their respective norm by influencing the general public
+to believe in their viewpoint. Members of the \#MeToo movement attend rallies, post on social media
+and do other things to try and spread awareness to the general public of their unjust treatment. Meanwhile,
+those in charge denounce the accusations of the \#MeToo movement and try to convince
+the general public the people involved in this movement are not credible and should not be taken seriously.
+The norm that succeeds from this will be the one which the general public becomes most willing to accept.
+
+A second example is a situation where the dominant group does not necessarily
+benefit at the expense of the subgroup. An example of this could be the
+movement advocating for improved accessibility on public transit. The general public and those in charge
+do not gain anything from the lack of accessibility, but those with physical impairments
+do suffer disproportionately. Hence, this movement will have a high chance of convincing the rest
+of the individuals to update their norm to support accessibility on public transit.
+
+A third example is sports fans. Consider the city of Liverpool as the dominant group,
+then there is a subgroup consisting of Liverpool football club fans. This subgroup
+has its norm, with accepted behaviours specific to their group (such as going to watch every Sunday match).
+Additionally, this subgroup has its own network of communication that is separate from that of the general public.
+For instance, many fans may discuss the current state of the club on team-specific online forums that
+are not used by the general public. It is important to note that the general public and the fans
+are practically unaffected by each other. Hence, these two groups can coexist together with
+the fans as a subculture.
+
+With these motivating examples, the objects of study can be defined precisely.
+
+\section{Social Reward Economies}
+The definition of an individual social reward economy borrows largely from the revised report from last year.
+Given an ambient set of agents $G = \{ 1, \ldots, n \}$, forming a multi-agent system,
+a social reward economy with respect to $G$ consists of:
+\begin{itemize}
+    \item \textbf{The Agents:} $\mathcal A \subseteq G$ this is the set of agents who actively participate in the social reward economy.
+    \item \textbf{Social situations:} there is a fixed set of states $S$ and at each timestep the system is in a given state $s \in S$,
+    where $p(s)$ is the probability of the system being in state $s$ (this probability is independent of time).
+    \item \textbf{Actions:} for each state $s$ there is a finite set of actions $A(s)$ from which
+    each agent $i \in \mathcal A$ must choose in state $s$.
+    \item \textbf{Behaviour:} the behaviour of an agent $i$ is given by a mapping
+    \[ \pi_i: S \to \bigcup_{s \in S}A(s) \]
+    such that $\pi_i(s) \in A(s)$.
+    \item \textbf{Schemas:} each agent interprets a given state $s$ through an internal schema.
+    Let $\Sigma(s)$ denote the set of possible schemas applicable to situation $s$. Schemas
+    are not observable, but the behaviour of agent serves as a proxy for their schema. In other words
+    when agent $i$ selects a schema $\sigma \in \Sigma(s)$ their corresponding action $\pi_i(s) \approx \sigma$.
+    \item \textbf{Utilities:} For each state $s$ and action $a \in A(s)$ the agent $i$ recieves a benefit $u_i(s, a)$.
+    \item \textbf{Reward Structure:} there are two core reward systems that serve as the incentive mechansisms for agents:
+    \begin{enumerate}
+        \item[(1)] Personal utility: this is simply the personal benefit described in the bullet point above.
+        \item[(2)] Reputation: the reputation of agent $i$ is defined as the aggregate benefit it provides to other agents.
+        If the system is in state $s$ then
+        \[ R_i(s) = \gamma \sum_{j \in \mathcal A \setminus \{ 0 \}} \sum_{s \in S}u_j(s, \pi_i(s)) \]
+        where $\gamma > 0$ is a scaling parameter.
+    \end{enumerate}
+
+    \item \textbf{Reputation Learning through Gossip:} Each agent $i$ maintains two estimates about another agent $j$.
+    \begin{enumerate}
+        \item[(1)] $P^{(t)}_{i, j}$ denotes the $i$'s personal estimate of $j$'s utility for $i$.
+        \[ P^{(t)}_{i, j} = \begin{cases}
+                u^{(0)}_{j}(s, \pi_i(s)) & t = 0 \\
+                (1 - \alpha)P_{i, j}^{(t-1)} + \alpha u_j^{(t)}(s, \pi_i(s)) & t > 0
+        \end{cases} \]
+        \item[(2)] $R^{(t)}_{i, j}$ the reputation estimate of $i$ for $j$
+        \[ R^{(t)}_{i, j} = \begin{cases}
+            0 & t = 0 \\
+            R_{i, j}^{t - 1} + (P_{i, j}^{(t)} - P_{i, j}^{(t-1)}) & t > 0
+        \end{cases} \]
+        finally, after these updates the set of agents $\mathcal A_{a}(t) \subseteq \mathcal A$
+        that are active at time $t$ exchange their reputation estimates
+        \[ R_{i, j}^{(t)} = \frac{1}{|\mathcal A_{a}(t)}\sum_{k \in \mathcal A_a(t)}R^{(t)}_{k, j} \]
+        and this is for all $i \in \mathcal A_{a}(t)$ and $j \in \mathcal A$.
+    \end{enumerate}
+
+    \item \textbf{Optimization:} Opinion leaders maximize reputation through a loop
+    of behaviour and feedback, other agents imitate the agent who they estimate to have the highest
+    reputation.
+\end{itemize}
+
+\section{The Dominant Group}
+Now we define the dominant group in isolation with the social reward economy framework.
+
+\begin{itemize}
+    \item \textbf{The Agents:} $\mathcal A = G$, in the above examples the dominant group consisted
+    of the entire society, so it makes sense for its economy to involve all agents.
+    \item \textbf{Social situations:} we fix a set of states $S$ which the members of $G$ act in,
+    this should be thought of as a large set of states (the different parts of functioning in a society).
+    However there is a subset $S_r \subseteq S$ which is the set of states where those in power benefit at
+    the expense of members of the \#MeToo movement and who they stand for. 
+    \item \textbf{Actions:} we fix the set of actions $A(s)$ for each state $s$.
+    \item \textbf{Behaviour:} This is defined as above.
+    \item \textbf{Schemas:} In our \#MeToo examples there were roughly 3 schemas. The dominant schema $\sigma_d$
+    enforced by those in power, the reformed schema $\sigma_f$ that the \#MeToo movement wants to establish as the norm,
+    and finally the resistant schema $\sigma_r$ which is the schema employed by the \#MeToo movement to overturn the dominant one.
+    Note that the last two can be folded into a single subgroup schema, which is a better framework to describe
+    the accessibility movement or sports fans in relation to society.
+    \item \textbf{Utilities:} clearly the distribution of the utilities dictates how the two groups interact.
+    We only consider the \#MeToo movement example in detail, but hopefully it is clear how the below utility distribution
+    would inform the other examples. For the \#MeToo movement example, we can partition $G$
+    as $G_d \sqcup G_n \sqcup G_r$ where $G_d$ are those in power, $G_n$ is the general public
+    and $G_r$ are members of \#MeToo. And if we assume all actions fall under one of the 3
+    schemas $\sigma_d, \sigma_r, \sigma_f$ we can map out the reward distribution.
+    First for $s \in S \setminus S_r$ the rewards are fairly uniform, there is no unfair
+    advantage for those in power. However for $s \in S_r$ we have the following distributions where $\gg$ refers to large reward
+    and $>$ refers to a normal level of reward:
+    If $i \in G_d$
+    \begin{align*}
+        u_i(s, a) = \begin{cases}
+            \gg 0 & a \approx \sigma_d \\
+            < 0 & a \approx \sigma_r \\
+            > 0 & a \approx \sigma_f
+        \end{cases}
+    \end{align*}
+    the intuition being that those in power benefit greatly from their schema,
+    but during a successful resistance they would suffer due to public shaming and loss
+    of credibility. However, once the resistance has overturned the dominant schema,
+    those in power can reintegrate into society but with moderate rewards and lower reputation
+    due to the negative image they have accumulated.
+    If $i \in G_n$
+    \begin{align*}
+        u_i(s, a) = \begin{cases}
+            > 0 & a \approx \sigma_d \\
+            > 0 & a \approx \sigma_r \\
+            > 0 & a \approx \sigma_f
+        \end{cases}
+    \end{align*}
+    here the idea is that the general public is mostly unaffected by the conflict
+    between those in power and the \#MeToo movement.
+    Finally, if $i \in G_r$
+    \begin{align*}
+        u_i(s, a) = \begin{cases}
+            \ll 0 & a \approx \sigma_d \\
+            \gg 0 & a \approx \sigma_r \\
+            > 0 & a \approx \sigma_f
+        \end{cases}
+    \end{align*}
+    her the intuition is that, in the dominant norm the individuals the \#MeToo movement
+    stand for are negatively affected. Thus, during a successful resistance they would
+    see large benefits as their suffering is acknowledged and those who caused harm to them are punished.
+    Finally, once the resistant norm becomes the dominant one, those who once suffered will
+    now function as normal members of society with moderate rewards in these social situations.
+    \item \textbf{Reward Structure:} the two quantities here are defined in the exact same way as above.
+
+    \item \textbf{Reputation Learning through Gossip:} these estimates are defined in the same way as above,
+    although it is worth commenting briefly on the gossip network. Since the dominant group will have higher rewards
+    on average than both the general public and those in the \#MeToo movement, they will act more often in the system
+    and hence their reputation estimates will disproportionately influence the reputation
+    estimates of other agents in the dominant norm. This is how those in power aim to influence the general
+    public to discredit the \#MeToo movement and continue to follow the dominant norm.
+
+    \item \textbf{Optimization:} the optimization process is identical to before.
+\end{itemize}
+
+\section{The Resistant Group}
+Now we define the resistant group in isolation with the social reward economies framework.
+\begin{itemize}
+    \item \textbf{The Agents:} $\mathcal A = G_r$, clearly the agents involved in the resistant economy
+    will only be those in the resistant subgroup.
+    \item \textbf{Social Situations:} we consider $S_r \subseteq S$ to be the set of states within this social reward economy.
+    We only take a subset of the total states in the dominant economy as this provides better flexibility in modeling real-life
+    resistance. For example, the \#MeToo movement is only concerned with a small subset of the total states in society,
+    namely those where sexual harassment takes place. Thus it would make sense for the social interactions of the group
+    to revolve primarily around these specific situations.
+    \item \textbf{Actions:} we fix the same set of actions $A(s)$ used in the dominant economy for each state $s \in S_r$.
+    \item \textbf{Behaviour:} this is also defined as above, except now in the resistant economy,
+    actors are only interested in the actions taken in the subset of states $S_r$.
+    \item \textbf{Schemas:} the same schemas as in the previous economy are used here.
+    \item \textbf{Utilities:} the utilities are inherited from the dominant economy.
+    \item \textbf{Reward Structure:} the two quantities are defined as above, except
+    now reputation is taken over $S_r$.
+    \item \textbf{Reputation Learning through Gossip:} these estimates are defined in the same way as above,
+    but now the gossip network functions slightly differently. Since the only states in the economy
+    are those in $S_r$ and only agents in $G_r$ participate in the economy, the emergent opinion leader
+    would be the individual who best represents the overall interests of the group as the utility distribution
+    of all agents in the group are similar. In the example, this would be the leader of the \#MeToo movement.
+    This individual is the candidate reformed opinion leader, at least temporarily.
+    In other words, to overturn the incumbent norm the resistant subgroup must overturn the dominant norm
+    by establishing an opinion leader that upholds a different norm, and the most likely individual to do this
+    is the opinion leader in the resistant economy.
+
+    \item \textbf{Optimization:} the optimization process is identical to before.
+\end{itemize}
+
+\section{Cross-Group Interaction}
+In section's 4 and 5 we have defined the isolated social reward economies for the dominant and resistant groups respectively.
+Now we wish to modify these definitions so that we can model their interaction.
+
+First I propose a slight modification to the theoretical reputation calculation.
+Let $R_i^d(\pi_i)$ be the reputation of agent $i$ in the dominant economy then define
+\[ R_i^d(\pi_i) = \begin{cases}
+    \gamma^{d}_r\displaystyle\sum_{j \in G \setminus \{ i \}}\sum_{s \in S}u_j(s, \pi_i(s)) & i \in G_r \\
+    \gamma^d_r\displaystyle\sum_{j \in G \setminus \{ i \}}\sum_{s \in S}u_j(s, \pi_i(s)) & i \in G \setminus G_r \\
+\end{cases} \]
+where these are the same quantities up to the scaling factors $\gamma^d_r, \gamma^d_d > 0$. These two quantities
+are meant to represent the fact that, given an agent $i \in G$, whether or not it is a member of the resistant subgroup
+affects its reputation in the dominant group. In the example, a member of the \#MeToo movement
+might have lower reputation in the dominant group than within the movement, as their actions and beliefs are not as greatly
+appreciated in society as a whole or because of a stigma against people who participate in large activist movements.
+This means that a member of the general public who contributes a roughly similar amount to society as some member of the \#MeToo
+movement might have a higher reputation than the member of the movement.
+
+Now we let $R_i^r(\pi_i)$ be the reputation of agent $i$ in $G_r$, we define
+\[ R_i^r(\pi_i) = \begin{cases}
+    \gamma^r_r\displaystyle\sum_{j \in G_r \setminus \{ i \}}\sum_{s \in S_r}u_j(s, \pi_i(s)) & i \in G_r \\
+    \gamma^r_d\displaystyle\sum_{j \in G_r}\sum_{s \in S_r}u_j(s, \pi_i(s)) & i \in G \setminus G_r \\
+\end{cases} \]
+and these again represent the same quantities up to scaling factors $\gamma_r^r, \gamma^r_d > 0$. These two
+quantities again represent that whether an agent is a member of $G_r$ or not affects their reputation within the subgroup $G_r$.
+This is evident in the \#MeToo movement example as within the movement the opinions of other member's are given a much higher value
+than those of individuals outside of the movement.
+
+This modification addresses how the theoretical reputation should be altered to better describe cross-group interaction.
+Now to modify the reputation estimates, it is clear that the key structure is gossip. Within the \#MeToo movement example
+it is clear the mai instance when the movement interacts with the general public is if individuals
+from each group appear in the same social situation and are similar enough that they would feel comfortable exchanging information with each other.
+To formalize this notion of similarity we wish to define another metric to determine whether or not two agents gossip.
+We define the similarity of agents $i$ and $j$ in $G$ at time $t$
+as
+\[ \operatorname{sim}_d(i, j, t, s) = \begin{cases}
+    0 & t = 0 \\
+    (1 - \alpha)\operatorname{sim}_d(i, j, t-1, s) + \alpha(u_i(s, \pi_i(t)) - u_i(s, \pi_j(t)))^2 & t > 0 \\
+\end{cases} \]
+for $\alpha \in (0, 1)$.
+Then define the similarity of agent $i$ and $j$ as
+\[ \operatorname{sim}_d(i, j, t) = \frac{1}{|S|}\sum_{s \in S}\operatorname{sim}_d(i, j, t, s) \]
+then similarly for the subgroup $G_r$ we define for $s \in S_r$
+\[ \operatorname{sim}_r(i, j, t, s) = \begin{cases}
+    0 & t = 0 \\
+    (1 - \alpha)\operatorname{sim}_r(i, j, t-1, s) + \alpha(u_i(s, \pi_i(t)) - u_i(s, \pi_j(t)))^2 & t > 0 \\
+\end{cases} \]
+for $\alpha \in (0, 1)$
+then define the similarity of agent $i$ and $j$ as
+\[ \operatorname{sim}_r(i, j, t) = \frac{1}{|S_r|}\sum_{s \in S_r}\operatorname{sim}_d(i, j, t, s) \]
+now instead of allowing gossip in each economy to occur for all active agents,
+we only allow two active agents in the economy $G_d$ to gossip at time $t$
+if $\operatorname{sim}_d(i, j, t) < C_d$ where $C_d > 0$ is a fixed constant. Similarly, we only allow two agents $i$ and $j$
+to gossip in $G_r$ if $\operatorname{sim}_r(i, j, t) < C_r$ where $C_r > 0$ is a fixed constant.
+
+This captures a basic intuition and observable phenomenon: individuals will only socialize
+and exchange information if they feel comfortable enough with each other, or in other words
+they behave similarly in most social situations (what corresponds to a low similarity score).
+This also helps model how resistance actually happens in real life. Specifically, consider the \#MeToo movement
+again, how does the movement influence the general public? There are large demonstrations or rallies that bring
+awareness to the issues the movement stands for, but a large part of the public acceptance of the movement comes from
+casual human interaction. Namely, members of the movement will interact with the general public outside of the context of the movement
+and they will do so more than the people in power. This happens because most of the general public has more in common with the general public
+in most social situations than those in power, hence they will tend to interact more with individuals in the movement. These small interactions
+are what allow the movement to become accepted and its ideas to spread throughout the general public. Formally,
+this phenomenon is modulated by the similarity score above.
+
+\end{document}
