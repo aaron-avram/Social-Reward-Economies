@@ -36,14 +36,12 @@
 % ============================================================
 
 \subsection{Motivation and gap}
-\todo{One paragraph. The SRE paper describes resistance as an alternative reward economy but leaves feedback, reputation and status loosely specified, and uses feedback quantities in its inequalities without defining who gives feedback to whom or how it is weighted. This report supplies those three definitions.}
 The \textit{Social Reward Economies} paper describes resistance as an alternative reward economy
 but leaves feedback, reputation and status loosely specified with feedback
 quantities used in the inequalities measuring the effectiveness of resistance. This report
 provides these three definitions.
 
 \subsection{Scope}
-\todo{State plainly what this report does and does not do. It defines three quantities and shows how they express the features of resistance in an example. It does not define a decision rule, an attention parameter, success conditions for resistance, gossip structure or any dynamics. Give one sentence on why: those depend on the definitions here and should follow their review.}
 This report defines three quantities and how they express features of resistance in the \#MeToo example.
 It does not define a decision rule, success conditions for resistance and other key parts
 of implementing resistance in a multi-agent system. The reason for this is that these depend on the definitions
@@ -54,7 +52,6 @@ of the three stated quantities and should not be considered until these definiti
 % ============================================================
 
 \subsection{\#MeToo}
-\todo{Three types of people: those in power ($\Gd$), the general public ($\Gn$), the movement ($\Gr$). Keep the observation from the earlier report that the public is not strongly affected by either side yet is the majority. Describe the pre-movement norm (silence) and the movement's counter-norm (disclose and hold accountable).}
 An example is the formation of the \#MeToo Movement. There are three types of people in this scenario:
 those in charge in the dominant group (such as high ranking corporate officials)
 the members of the \#MeToo movement and finally the general public (which is just everyone else in society). In this setup
@@ -70,15 +67,11 @@ The pre-movement norm is that individuals should stay silent about sexual assaul
 is that they should instead disclose these cases and hold the perpetrators accountable.
 
 \subsection{Schemas and states}
-\decide{Use two schemas, dominant $\sd$ (silence / excuse) and resistant $\sr$ (disclose / hold accountable), folding the earlier report's reformed and resistant schemas together? Nothing in this report needs three.}
-\todo{Let $S_r \subseteq S$ be the states where sexual harassment is at issue. Outside $S_r$, utilities are roughly uniform.}
-
 There are two schemas: dominant $\sd$ (silence/excuse) and resistant $\sigma_r$ (disclose/hold accountable)
 Let $S_r \subseteq S$ be the set of states where sexual harassment is at issue. Outside
 of $S_r$, utilities are roughly uniform.
 
 \subsection{Utilities}
-\todo{Reuse the earlier report's utility distribution. It also serves as the feedback table, since feedback is derived from utilities (Section~\ref{sec:feedback}).}
 \begin{table}[h]
 \centering
 \begin{tabular}{lcc}
@@ -90,11 +83,10 @@ $\Gn$ (public)    & $> 0$   & $> 0$ \\
 $\Gr$ (movement)  & $\ll 0$ & $\gg 0$ \\
 \bottomrule
 \end{tabular}
-\caption{Utilities for $s \in S_r$. \todo{Confirm entries against the earlier report.}}
+\caption{Utilities for $s \in S_r$.}
 \end{table}
 
 \subsection{Contrast cases}
-\todo{One or two sentences each. Accessibility: the public and those in charge do not gain from the old norm. Liverpool fans: a subgroup with its own norm and network, unaffected by and not affecting the city. Used only in Section~\ref{sec:contrast}.}
 The above example is only a specific case where the dominant group and the subgroup are in direct opposition.
 However, there are other cases. First, consider the example of the accessibility
 movement: the public and those in charge do not gain from the old norm. Or,
@@ -104,13 +96,11 @@ unaffected by and not affecting the rest of society.
 % ============================================================
 \section{Minimal Setting}
 % ============================================================
-\todo{Notation only, as short as possible. Do not introduce anything that is not used in Section~\ref{sec:defs}.}
-Some notation:
 
 \begin{itemize}[nosep]
   \item States $s \in S$ with probabilities $p(s)$; actions $A(s)$.
   \item Utilities $u_j(s,a) \in \mathbb{R}$, heterogeneous across agents, positive or negative.
-  \item Agent $k$'s behaviour as a distribution over actions, $O_k(s)$: the softmax policy from Learning Norms. This differs from the SRE paper's $O_i(s)$, which denotes a schema
+  \item Agent $k$'s behaviour as a distribution over actions, $O_k(s)$: the softmax policy from the \textit{Learning Norms} paper. This differs from the SRE paper's $O_i(s)$, which denotes a schema
   and can be viewed as a proxy for $k$'s actual schema.
   \item Groups: a larger group $G$ and a subgroup $\Gr \subset G$. A generic group is written $H \in \{G, \Gr\}$.
   \item Participation: rate $\mu_{j,p}^H$ and activity probability $\theta(\mu) = 1 - e^{-\mu}$, used only to define audience weights.
@@ -119,7 +109,6 @@ Some notation:
 % ============================================================
 \section{Definitions}\label{sec:defs}
 % ============================================================
-\todo{Use the same three parts for each definition: (i) the definition; (ii) the simpler alternative and what it cannot represent; (iii) the \#MeToo instance.}
 \subsection{Social feedback}\label{sec:feedback}
 \begin{definition}[Social feedback]
 For agents $j \neq k$ and a state $s$, the feedback from $j$ to $k$ is $j$'s expected benefit from $k$'s behaviour:
@@ -127,24 +116,18 @@ For agents $j \neq k$ and a state $s$, the feedback from $j$ to $k$ is $j$'s exp
   f_{jk}(s) \;=\; \E_{a \sim O_k(s)}\big[\, u_j(s,a) \,\big].
 \end{equation}
 \end{definition}
-\todo{Simpler alternative: an unsigned endorsement (as in the Learning Norms status). It cannot express sanction. \#MeToo instance: a person in power gives negative feedback to a survivor who discloses; movement members give positive feedback. Note that feedback is defined between any two agents, in or out of the same group.}
 Here it is crucial that $u_j(s, a)$ can be both positive and negative so that social feedback
 can be both positive and negative. This is necessary as in the \#MeToo example:
 a person in power gives negative feedback to a surivor who discloses but the movement members
 give this action positive feedback.
 
-\begin{remark}
-\todo{Point out the indexing: $f_{jk}$ uses $j$'s utility $u_j$ evaluated on $k$'s behaviour. Using $u_k$ instead would give $k$'s own utility, which is personal utility, not feedback.}
-\end{remark}
-
-\subsection{Audience weights (auxiliary)}
+\subsection{Audience weights}
 \begin{definition}[Audience weights]
 For a group $H$, let
 \begin{equation}
   \nu_j^H \;=\; \frac{\theta(\mu_{j,p}^H)}{\sum_{l \in H} \theta(\mu_{l,p}^H)}, \qquad j \in H.
 \end{equation}
 \end{definition}
-\todo{Explain in two sentences why $\theta$ is normalised (it is an activity probability, not a distribution) and why participant, not actor, rates are used. This is an auxiliary object, not a main definition.}
 This normalization is important so that we get a probability distribution over $H$ which expresses
 the probability of any given agent participating. This is important as it relates
 to how much other agents care about $j$'s feedback. If $j$ does not participate regularly
@@ -157,8 +140,6 @@ For a group $H$ and a member $k \in H$,
   R_k^H(s) \;=\; \sum_{j \in H \setminus \{k\}} \nu_j^H \, f_{jk}(s).
 \end{equation}
 \end{definition}
-\todo{Reputation is the audience-averaged feedback within $H$. Simpler alternative: one global reputation, which averages the two audiences together and cannot represent a counterpublic. \#MeToo instance: an advocate has high $R^{\Gr}$ and a much lower, possibly negative, $R^{G}$; a protected person in power has high $R^{G}$.}
-\decide{Should reputation be defined for non-members? Your constraint is that members of $G$ outside $\Gr$ have no reputation in $\Gr$, so the definition above is restricted to $k \in H$. The cost: a person in power has no $R^{\Gr}$, and the movement's rejection of them shows up as \emph{negative feedback from $\Gr$ members} (Section~\ref{sec:feedback}), not as a negative reputation. This differs from the earlier report, which spoke of the abuser's ``highly negative reputation'' in the movement. Alternatively, define $R^{\Gr}_k$ for all $k \in G$ using raters in $\Gr$, and say that only the \emph{rater} role is closed to outsiders.}
 
 Reputation is the audience-averaged feedback within $H$. It is important that there are separate reputation structures
 in $G$ and $G_r$ as otherwise there could not be any counter-public. In the \#MeToo example,
@@ -172,9 +153,6 @@ For $k \in H$, let $w_j^H = \nu_j^H\,[R_j^H]_+$ be rater $j$'s weight, where $[x
   S_k^H(s) \;=\; \sum_{j \in H \setminus \{k\}} w_j^H \, f_{jk}(s).
 \end{equation}
 \end{definition}
-\todo{Status is reputation-weighted feedback: feedback from well-regarded raters counts for more. Why clip at zero: a discredited rater is discounted rather than having his feedback sign-flipped. \#MeToo instance: an early discloser receives negative feedback from the heavily weighted powerful in $G$ (low or negative $S^{G}$) but strongly positive feedback from respected movement members ($S^{\Gr}$ high). This is the support that makes speaking out survivable.}
-\decide{Clipping at zero versus another monotone nonnegative map for the weights.}
-
 Status is reputation-weighted feedback: feedback from well-regarded raters counts more.
 The reputation term in the feedback weight is cliped at zero as a discredited rater
 should be ignored not have their feedback sign-flipped. In the \#MeToo example,
@@ -183,67 +161,81 @@ but strongly positive feedback from respected movement members. This is the supp
 that makes speaking out survivable.
 
 \begin{remark}
-This is not the status defined in Learning Norms, where $S_k$ sums each follower's reputation $R_i(\pi_k)$, i.e.\ the benefit to everyone else. This status sums raters' own perceived benefit; it recovers that definition only if the weights are follower indicators and $f$ is replaced by $R_i$. 
+This is not the status defined in the \textit{Learning Norms} paper, where $S_k$ sums each follower's reputation $R_i(\pi_k)$, i.e.\ the benefit to everyone else. This status sums raters' own perceived benefit; it recovers that definition only if the weights are follower indicators and $f$ is replaced by $R_i$. 
 This setup also has a hierarchy of influence among the defined quantities: weights depend on reputation and status depends on weights.
 \end{remark}
 
 % ============================================================
 \section{How the Three Quantities Pertain to Resistance}
 % ============================================================
-\todo{Frame this section as description, not as a result: which pattern across feedback, reputation and status distinguishes a resistant subgroup from an ordinary one. Do not state success conditions, thresholds or decision rules.}
+In this section we describe how the three quantities pertain to resistance. Specifically,
+which pattern across feedback, reputation and status distinguish a resistant subgroup from an ordinary one.
 
 \subsection{The configuration before the movement}
-\todo{Fill the table below from the utility table and the definitions. Suggested reading: the powerful and the public give positive feedback to behaviour $\sd$ and negative or muted feedback to $\sr$; reputation and status in $G$ are high for those in power and for those who stay silent.}
 \begin{table}[h]
 \centering
 \begin{tabular}{lccc}
 \toprule
 Agent (behaviour) & $R^{G}$ & $S^{G}$ & Feedback from $\Gr$ \\
 \midrule
-Person in power ($\sd$)    & & & \\
-Advocate who discloses ($\sr$) & & & \\
-Bystander ($\sd$)          & & & \\
+Person in power ($\sd$)    & Very Positive & Very Positive & Very Negative \\
+Advocate who discloses ($\sr$) & Very Negative & Very Negative & Very Positive \\
+Bystander ($\sd$)          & Positive & Positive & Negative \\
 \bottomrule
 \end{tabular}
-\caption{Standing in $G$ for representative agents. \todo{Verify each sign against the definitions and the utility table; state assumptions about weights.}}
+\caption{Standing in $G$ for representative agents.}
 \end{table}
 
 \subsection{An alternative economy: the pattern that signals resistance}
-\todo{Describe, in words and one table, what it means for $\Gr$ to have its own economy in terms of the three quantities. Suggested content: for the same behaviour, the sign of feedback given by members of $\Gr$ differs from the sign given by the rest of $G$; the ranking of agents by reputation within $\Gr$ differs from the ranking in $G$; and status within $\Gr$ is held by different agents than status in $G$.}
+For $G_r$ to have its own economy it mmust have a network separate from $G$
+where status, reputation and social feedback can be established for members of the subgroup
+based only on the utilities of the subgroup. The contrast between the values
+of these quantities in the subgroup vs total group are illustrated below:
+
 \begin{table}[h]
 \centering
 \begin{tabular}{lcc}
 \toprule
 Agent (behaviour) & $R^{\Gr}$, $S^{\Gr}$ (movement's view) & $R^{G}$, $S^{G}$ (larger group's view) \\
 \midrule
-Advocate who discloses ($\sr$) & & \\
-Movement leader ($\sr$)        & & \\
+Advocate who discloses ($\sr$) & Positive & Negative \\
+Movement leader ($\sr$)        & Very Positive & Very Negative \\
 \bottomrule
 \end{tabular}
-\caption{The same agents evaluated by the two audiences. \todo{The point of the table is the sign reversal between columns.}}
+\caption{The same agents evaluated by the two audiences.}
 \end{table}
 \begin{remark}
-\todo{Say that this is a description of what an alternative economy looks like, and that the SRE paper's Eqs.\ (1)--(2) are stated in terms of weighted feedback of exactly this kind. Say that how such feedback determines whether the subgroup's norm spreads is left for later.}
+This is a description of what an alternative economy looks like and the paper has the equations
+\begin{align*}
+    \Big| \sum_{i \in G_r} w_if_i^r(\sigma_r, s) \Big| &\gg \Big| \sum_{j \in G \setminus G_r} w_jf_j(\sigma_r, s) \Big| \\
+    \Big| \sum_{i \in G_r} w_if_i^r(\sigma_s, s) \Big| &\gg \Big| \sum_{j \in G \setminus G_r} w_jf_j(\sigma_s, s) \Big| \\
+\end{align*}
+as the necessary conditions for successful resistance to take place and these are stated in terms of weighted
+feedback as defined above. However, how such feedback determines whether the subgroup's norm spreads is not discussed
+and is a next step once the above definitions are solidified.
+
 \end{remark}
 
 \subsection{The cost of speaking out}
-\todo{Qualitative only. A discloser receives negative feedback and low status from the larger group but positive feedback and high status inside $\Gr$. Compare $S^{\Gr}$ and $S^{G}$ for a discloser to say why speaking out is costly and why the subgroup's status is what sustains it. Do not define a threshold.}
-
-\subsection{Asymmetry between the groups}
-\todo{Members of $G$ outside $\Gr$ give no weighted feedback inside $\Gr$ (the constraint from Section 4), while members of $\Gr$ remain part of $G$ and are evaluated there. Say why this matters for the example: the subgroup can be affected by outsiders' feedback, but outsiders are not affected by the subgroup's internal ranking.}
-\decide{Do members of $\Gr$ carry reputation and status in $G$? Here they do, which is what makes ``high in $\Gr$, low in $G$'' expressible.}
+A discloser of sexual assualt in the \#MeToo example receives negative feedback and low status from the larger
+group but positive feedback and high status inside $G_r$. If $S^{G_r} \gg S^{G}$ then speaking
+out is costly as the negative outcome in the larger group outweighs the positive one in the subgroup.
+Conversely, if the inequality is reversed then speaking out is beneficial and this mechansism
+is what should sustain the subgroup and promote resistance.
 
 \subsection{Contrast cases}\label{sec:contrast}
-\todo{Show that the same three quantities describe the other examples differently.}
+Considering the alternate subgroup examples from before, they can also be describe by feedback, reputation and status
+only with different values:
+
 \begin{table}[h]
 \centering
 \begin{tabular}{p{3cm}p{5cm}p{6cm}}
 \toprule
 Example & Feedback from the wider group to the subgroup's norm & Reputation and status pattern \\
 \midrule
-\#MeToo         & & \\
-Accessibility   & & \\
-Liverpool fans  & & \\
+\#MeToo         & Negative & negative \\
+Accessibility   & Positive & Slightly Positive \\
+Sports fans  & Neutral & Neutral \\
 \bottomrule
 \end{tabular}
 \caption{Pattern of the three quantities in each example.}
@@ -254,16 +246,19 @@ Liverpool fans  & & \\
 % ============================================================
 
 \subsection{Relation to Learning Common Norms}
-\todo{Restate the status difference. One sentence on what carries over (signed vs.\ unsigned is new; utilities and softmax policies carry over).}
+The status defined here is similar to that defined in the \textit{Learning Norms} paper except now utilities are signed, but the overall structure
+(use of utilities and softmax policy) are largely the same.
 
 \subsection{What is deliberately left out}
-\todo{One short list, no detail: how feedback aggregates into a choice between schemas; how much attention agents give each group; formal conditions for a subgroup norm to spread or to displace the dominant one; who interacts with whom; how any of these quantities change over time. State that these are the natural next step once the three definitions are settled.}
+There were multiple points not included in this report: how feedback aggregates into a choice
+between schema; how much attention agents give each group; formal conditions for a subgroup norm
+to spread or to displace the dominant one. All of these questions are the natural next steps to consider once
+the above three definitions are settled.
 
 \subsection{Limitations}
 \begin{itemize}[nosep]
-  \item \todo{The example is used to motivate the definitions, so agreement with the example is plausibility, not validation.}
-  \item \todo{The definitions are static and say nothing about whether the described patterns arise.}
-  \item \todo{Dependence on the choices marked above (schema count, weight map, reputation for non-members).}
+  \item The \#MeToo example is used to motivate the definitions, so agreement with the example is plausibility, not validation.
+  \item The definitions are static and say nothing about whether the described patterns arise.
 \end{itemize}
 
 \end{document}
