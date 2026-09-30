@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1790811214.71693 "/Users/tudor/University/Y3/Social-Reward-Economies/writeups/w3/week3_writeup.tex" "week3_writeup.pdf" "week3_writeup" 1790811215.26884 0
-  "/Users/tudor/University/Y3/Social-Reward-Economies/writeups/w3/week3_writeup.tex" 1790811214.47247 12944 aa876429608ccfb12c585d8fe2ade7a9 ""
+["pdflatex"] 1790811262.76542 "/Users/tudor/University/Y3/Social-Reward-Economies/writeups/w3/week3_writeup.tex" "week3_writeup.pdf" "week3_writeup" 1790811263.30894 0
+  "/Users/tudor/University/Y3/Social-Reward-Economies/writeups/w3/week3_writeup.tex" 1790811262.55398 12943 b69e8606b8272f2ea0362ade278b398f ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm1095.tfm" 1136768653 1536 02c06700a42be0f5a28664c7273f82e7 ""
@@ -98,9 +98,9 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1748024655 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1741450574 3345740 46b66fdb0378f7bf5921b5eabf1762b8 ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "week3_writeup.aux" 1790811215.20551 3783 5ced521e2e07b00b984975289074ff18 "pdflatex"
-  "week3_writeup.out" 1790811215.20609 3506 80b3545a10c285bc144b51e6716749f0 "pdflatex"
-  "week3_writeup.tex" 1790811214.47247 12944 aa876429608ccfb12c585d8fe2ade7a9 ""
+  "week3_writeup.aux" 1790811263.2484 3783 5ced521e2e07b00b984975289074ff18 "pdflatex"
+  "week3_writeup.out" 1790811263.24886 3506 80b3545a10c285bc144b51e6716749f0 "pdflatex"
+  "week3_writeup.tex" 1790811262.55398 12943 b69e8606b8272f2ea0362ade278b398f ""
   (generated)
   "week3_writeup.aux"
   "week3_writeup.log"
