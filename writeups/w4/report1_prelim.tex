@@ -1,0 +1,151 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black]{hyperref}
+
+% Drafting helpers: delete calls as you fill in
+\newcommand{\todo}[1]{\par\smallskip\noindent\textcolor{red!70!black}{\textbf{[FILL:}~#1\textbf{]}}\par\smallskip}
+\newcommand{\decide}[1]{\par\smallskip\noindent\textcolor{orange!80!black}{\textbf{[DECIDE:}~#1\textbf{]}}\par\smallskip}
+
+% Notation
+\newcommand{\Gd}{G_{d}}          % those in power
+\newcommand{\Gn}{G_{n}}          % general public
+\newcommand{\Gr}{G_{r}}          % resistant subgroup (the movement)
+\newcommand{\sd}{\sigma_{s}}     % dominant (silence) schema
+\newcommand{\sr}{\sigma_{r}}     % resistant (disclosure) schema
+\newcommand{\E}{\mathbb{E}}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\theoremstyle{remark}
+\newtheorem{remark}{Remark}[section]
+
+\title{Formalizing Resistance}
+\author{Aaron Avram}
+\date{October 6, 2026}
+
+\begin{document}
+\maketitle
+
+% ============================================================
+\section{Set up}
+% ============================================================
+The basic setup for the system is as follows:
+\begin{itemize}
+    \item There is a group of agents $G$.
+    \item A set of states $S$ where $s \in S$ has probability $p(s)$ of occuring.
+    \item For each $s \in S$ there is a set $A(s)$ of possible actions in state $s$.
+    \item A policy is function that maps each $s \in S$ to a probability distribution over $A(s)$.
+    Fix a dominant policy $\pi_d$.
+    \item Each agent $i \in G$ has a fixed reward $u_i(s, a)$ for action $a \in A(s)$ for $s \in S$.
+    \item Each agent $i$ has an expected reward under a policy $\pi$ in state $s$:
+    \[ U_i(s, \pi) = \mathbb E_{a \sim \pi(s)}\Big[u_i(s, a)\Big] \]
+    \item For each $i \in G$ there is a set of states $S_r^i \subseteq S$ where $U_i(s, \pi_d) \ll 0$.
+\end{itemize}
+We will assume the dominant norm stays fixed throughout all of the calculations for simplicity.
+
+\section{Defining Resistance Theoretically}
+We give a theoretical definition of a resistant subgroup $G_r$ of $G$.
+\[ w_i(s) = \max(0, -U_i(s, \pi_d)) \]
+hence $w_i \in \mathbb R^{|S|}_{\geq 0}$.
+The probability function on $S$ defines a norm on $\mathbb R^{|S|}$ given by:
+\[ \| \cdot \|_p: x \to \sqrt{\sum_{s \in S}p(s)x(s)^2} \]
+For a subgroup $H \subseteq G$ define
+\[ D(H) = \sum_{i \in H} \| w_i \|_p^2 \]
+which is the total disagreement with $\pi_d$ within $H$.
+If $\overline{w}_H$ is the mean $w_i$ in $H$, we define a related quantity:
+\[ F(H) = \sum_{i \in H}\| w_i -\overline{w}_H \|_p^2 \]
+and by expanding the square this is equivalent to
+\[ F(H) = \frac{1}{2|H|}\sum_{i, j \in H}\| w_i - w_j \|^2_p \]
+this is called the friction of $H$ and represents how much cohesion the group $H$
+has in its disagreement with $\pi_d$.
+
+Given a tolerance $\delta > 0$ we define the maximally resistant subgroup of $G$
+as
+\[ G_r = \operatorname{argmax}_{H \in \mathcal P(G)}D(H) \]
+subject to the constraint
+\[ F(H)/|H| \leq \delta \]
+where the constraint is necessary as $D(H)$ is monotone in $H$ with respect to $\subseteq$.
+
+If $\delta = 0$ then this requires that the maximally resistant subgroup is frictionless, i.e.
+its members perfectly align on their disagreement with $\pi_d$.
+
+Now we define a similarity matrix for the set of agents.
+\[ K_{ij} = \exp(- \| w_i - w_j \|^2 /2\sigma^2) \]
+and note that Jensen's inequality gives the relation:
+\[ \mathbb E_H[K_{ij}] \leq \exp \mathbb E_H[\| w_i - w_j \|^2_p / 2\sigma^2] =  \exp (\frac{F(H)}{|H|\sigma^2}) \]
+which gives the bound
+\[ |H|\sigma^2 \log \mathbb E_H[K_{ij}] \leq F(H) \]
+To prove a flipped version of this inequality we assume that $|u_i(s, a)|$ is bounded by a uniform constant.
+This implies that there exists $R$ such that for all $i, j \in H$
+\[ \| w_i - w_j \|_p^2 \leq R \]
+let $M = \frac{R^2}{2\sigma^2}$. Then the function
+\[ 1 - \exp(-x) \]
+is concave so for $x \in [0, M]$
+\[ 1 - \exp(-x) \geq x\Big(1 - \exp(-M)\Big)/M \]
+rearranging we see that
+\[ x \leq M\frac{1 - \exp(-x)}{1 - \exp(-M)} \]
+now set $x = \|w_i - w_j \|_p^2/2\sigma^2$
+then
+\[ \|w_i - w_j \|_p^2/2\sigma^2 \leq \frac{R^2}{2\sigma^2}\frac{1 - K_{ij}}{1 - \exp(-M)} \]
+or
+\[ \|w_i - w_j \|_p^2 \leq R^2\frac{1 - K_{ij}}{1 - \exp(-M)} \]
+hence
+\[ F(H) \leq \frac{R^2}{2}\frac{\frac{1}{|H|} - \mathbb E[K_{ij}]}{1 - \exp(-\frac{R^2}{2\sigma^2})} \]
+in other words this implies that the expected pairwise distance is small whenever $F(H)$ is.
+
+Since $F(H)$ would be hard to compute in practice $K_{ij}$ can be used as an approximation.
+
+\section{Estimating Rewards}
+Each agent keeps a running average of their personal benefit under $\pi_d$
+(this defined similarly to the learning norms paper). Now I propose that each agent
+shares their estimates with all other agents. This forms a matrix:
+\[ V_i[j, s] \]
+which tracks $i$'s estimate of $j$'s personal benefit under the dominant norm in state $s$.
+$V_i[j, s]$ should approach $U_j(s, \pi_d)$.
+
+Currently I assume that the message passed from agent $j$ to $i$ is perfectly accurate.
+However, this could be extended in two ways: one, simulating imperfect communication
+by adding Gaussian noise to each message and two, simulating deception by allowing $j$
+to learn the message to pass to $i$ that is most favourable to it.
+
+Next we define
+\[ \hat{w}_j^i(s) = \max(0, -V_i[j, s]) \]
+under the above assumptions this is independent of $i$ so we just write $\hat{w}_j(s)$.
+Additionally define
+\[ \hat{d}^2_{jk} = \| \hat{w}_j(s) - \hat{w}_k(s) \|^2_p \]
+and
+\[ \hat{K}_{jk} = \exp(-\hat{d}^2_{jk}/\sigma^2) \]
+then
+\[ \epsilon_j = \| w_j - \hat{w}_j \|_p \]
+with rewards bounded in absolute value by $B$ Hoeffding's inequality
+gives the bound
+\[ | w_j(s) - \hat{w}_j(s) | < \sqrt{2\log(2/\delta')/n_j(s)} \]
+with probability $1 - \delta'$ where $n_j(s)$ is the number of times $j$ has been in state $s$
+so far in the system. This then gives the bound
+\[ \epsilon_j < \sqrt{2|S|\log(2|S||N|/\delta')/n_j} \]
+where $n_j$ is the number of times agent $j$ has acted so far.
+
+This shows that $\epsilon_j$ can be bouned by quantities observable by the agents,
+but for simplicity I will assume below that each agent $j$ has access to $\epsilon_j$.
+
+\section{Formation}
+We now define conditions for resistant subgroup formation.
+
+An agent $i$ is called a candidate if
+\[ \| w_i \|^2_p \geq \tau \]
+for some fixed constant $\tau$.
+
+Then $i$ admits $j$ to its group if
+\[ \hat{d}_{ij} - \epsilon_i - \epsilon_j < r_{in} \]
+and $i$ leaves if some member $j$ has
+\[ \hat{d}_{ij} - \epsilon_i - \epsilon_j > r_{out} \]
+where $r_{out} > r_{in}$ for hysteresis.
+
+These kinds of decisions would occur at update epochs like in the Learning Norms paper.
+
+\end{document}
